@@ -54,7 +54,7 @@ function POMDPToolbox.action_info(p::AZPlanner, s; tree_in_info=false)
         i = 0
         start_us = CPUtime_us()
         for i = 1:p.solver.n_iterations
-            simulate(p, snode, p.solver.depth) # (not 100% sure we need to make a copy of the state here)
+            simulate(p, snode, p.solver.depth)
             if CPUtime_us() - start_us >= p.solver.max_time * 1e6
                 break
             end
@@ -93,7 +93,7 @@ function simulate(az::AZPlanner, snode::Int, d::Int)
     sol = az.solver
     tree = get(az.tree)
     s = tree.s_labels[snode]
-    if d == 0 || isterminal(az.mdp, s)
+    if d == 0 || isterminal(az.mdp, s) #ZZZ Fix, remove depth, doesn't matter for AZ search
         return 0.0
     end
 
@@ -103,10 +103,9 @@ function simulate(az::AZPlanner, snode::Int, d::Int)
             a = next_action(az.next_action, az.mdp, s, AZStateNode(tree, snode)) # action generation step
             if !sol.check_repeat_action || !haskey(tree.a_lookup, (snode, a))
                 n0 = init_N(sol.init_N, az.mdp, s, a)
-                w0 = 0.0
                 p0 = init_P(sol.init_P, az.mdp, s, a)
                 insert_action_node!(tree, snode, a, n0,
-                                    init_Q(sol.init_Q, az.mdp, s, a), w0, p0,
+                                    init_Q(sol.init_Q, az.mdp, s, a), p0,
                                     sol.check_repeat_action
                                    )
                 tree.total_n[snode] += n0
@@ -115,10 +114,9 @@ function simulate(az::AZPlanner, snode::Int, d::Int)
     elseif isempty(tree.children[snode])
         for a in iterator(actions(az.mdp, s))
             n0 = init_N(sol.init_N, az.mdp, s, a)
-            w0 = 0.0
             p0 = init_P(sol.init_P, az.mdp, s, a)
             insert_action_node!(tree, snode, a, n0,
-                                init_Q(sol.init_Q, az.mdp, s, a), w0, p0,
+                                init_Q(sol.init_Q, az.mdp, s, a), p0,
                                 false)
             tree.total_n[snode] += n0
         end
@@ -126,18 +124,13 @@ function simulate(az::AZPlanner, snode::Int, d::Int)
 
     best_UCB = -Inf
     sanode = 0
-    ltn = log(tree.total_n[snode])
+    tn = tree.total_n[snode]
     for child in tree.children[snode]
         n = tree.n[child]
         q = tree.q[child]
-        w = tree.w[child]
         p = tree.p[child]
-        c = sol.exploration_constant # for clarity
-        if (ltn <= 0 && n == 0) || c == 0.0
-            UCB = q
-        else
-            UCB = q + c*sqrt(ltn/n)
-        end
+        c_puct = sol.exploration_constant # for clarity
+        UCB = q + c_puct*p*sqrt(tn)/(1+n)
         @assert !isnan(UCB) "UCB was NaN (q=$q, c=$c, ltn=$ltn, n=$n)"
         @assert !isequal(UCB, -Inf)
         if UCB > best_UCB
@@ -180,7 +173,7 @@ function simulate(az::AZPlanner, snode::Int, d::Int)
     tree.n[sanode] += 1
     tree.total_n[snode] += 1
 
-    tree.q[sanode] += (q - tree.q[sanode])/tree.n[sanode] #ZZZ Fix, q = w/n
+    tree.q[sanode] += (q - tree.q[sanode])/tree.n[sanode]
 
     return q
 end

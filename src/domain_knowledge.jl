@@ -84,4 +84,4 @@ Return a value to initialize P(s,a) to based on domain knowledge.
 """
 function init_P end
 init_P(f::Function, mdp::Union{MDP,POMDP}, s, a) = f(mdp, s, a)
-init_P(n::Number, mdp::Union{MDP,POMDP}, s, a) = convert(Float64, n)
+init_P(str::String, mdp::Union{MDP,POMDP}, s, a) = convert(Float64, 1/length(actions(mdp, s)))   #This is slow if complicated actions function

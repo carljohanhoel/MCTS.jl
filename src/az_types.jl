@@ -128,7 +128,7 @@ function AZSolver(;depth::Int=10,
                     estimate_value::Any = RolloutEstimator(RandomSolver(rng)), #ZZZ Fix, call NN
                     init_Q::Any = 0.0,
                     init_N::Any = 0,
-                    init_P::Any = 0.0,   #Fix, call NN
+                    init_P::Any = "uniform",   #Fix, call NN
                     next_action::Any = RandomActionGenerator(rng),
                     default_action::Any = ExceptionRethrow()
                    )
@@ -166,7 +166,6 @@ mutable struct AZTree{S,A}
     # for each state-action node
     n::Vector{Int}
     q::Vector{Float64}
-    w::Vector{Float64}
     p::Vector{Float64}
     transitions::Vector{Vector{Tuple{Int,Float64}}}
     a_labels::Vector{A}
@@ -185,7 +184,6 @@ mutable struct AZTree{S,A}
                    Dict{S, Int}(),
 
                    sizehint!(Int[], sz),
-                   sizehint!(Float64[], sz),
                    sizehint!(Float64[], sz),
                    sizehint!(Float64[], sz),
                    sizehint!(Vector{Tuple{Int,Float64}}[], sz),
@@ -209,10 +207,9 @@ function insert_state_node!{S,A}(tree::AZTree{S,A}, s::S, maintain_s_lookup=true
     return snode
 end
 
-function insert_action_node!{S,A}(tree::AZTree{S,A}, snode::Int, a::A, n0::Int, q0::Float64, w0::Float64, p0::Float64, maintain_a_lookup=true)
+function insert_action_node!{S,A}(tree::AZTree{S,A}, snode::Int, a::A, n0::Int, q0::Float64, p0::Float64, maintain_a_lookup=true)
     push!(tree.n, n0)
     push!(tree.q, q0)
-    push!(tree.w, w0)
     push!(tree.p, p0)
     push!(tree.a_labels, a)
     push!(tree.transitions, Vector{Tuple{Int,Float64}}[])
