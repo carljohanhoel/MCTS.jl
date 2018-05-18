@@ -76,3 +76,12 @@ Return a value to initialize N(s,a) to based on domain knowledge.
 function init_N end
 init_N(f::Function, mdp::Union{MDP,POMDP}, s, a) = f(mdp, s, a)
 init_N(n::Number, mdp::Union{MDP,POMDP}, s, a) = convert(Int, n)
+
+"""
+    init_P(initializer, mdp, s, a)
+
+Return a value to initialize P(s,a) to based on domain knowledge.
+"""
+function init_P end
+init_P(f::Function, mdp::Union{MDP,POMDP}, s, a) = f(mdp, s, a)
+init_P(n::Number, mdp::Union{MDP,POMDP}, s, a) = convert(Float64, n)

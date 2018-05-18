@@ -13,6 +13,8 @@ export
     MCTSPlanner,
     DPWSolver,
     DPWPlanner,
+    AZSolver,
+    AZPlanner,
     BeliefMCTSSolver,
     AbstractMCTSPlanner,
     AbstractMCTSSolver,
@@ -38,6 +40,8 @@ export
     StateActionStateNode,
     DPWStateActionNode,
     DPWStateNode,
+    AZStateActionNode,
+    AZStateNode,
 
     ExceptionRethrow,
     ReportWhenUsed
@@ -51,6 +55,8 @@ include("domain_knowledge.jl")
 include("vanilla.jl")
 include("dpw_types.jl")
 include("dpw.jl")
+include("az_types.jl")
+include("az.jl")
 include("action_gen.jl")
 include("util.jl")
 include("default_action.jl")

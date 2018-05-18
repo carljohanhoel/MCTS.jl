@@ -26,12 +26,12 @@ end
 function D3Trees.D3Tree(policy::DPWPlanner; kwargs...)
     warn("""
          D3Tree(planner::DPWPlanner) is deprecated and may be removed in the future. Instead, please use
-             
+
              a, info = action_info(planner, state)
              D3Tree(info[:tree])
 
          Make sure that the tree_in_info solver option is set to true. You can also get this info from a POMDPToolbox History
-         
+
              info = first(ainfo_hist(hist))
              D3Tree(info[:tree])
          """)
@@ -213,10 +213,76 @@ function D3Trees.D3Tree(tree::DPWTree; title="MCTS-DPW Tree", kwargs...)
                                 )
         tt[sa+lens] = """
                       $(tooltip_tag(tree.a_labels[sa]))
-                      Q: $(tree.q[sa]) 
+                      Q: $(tree.q[sa])
                       N: $(tree.n[sa])
                       """
-                      
+
+        rel_q = (tree.q[sa]-min_q)/(max_q-min_q)
+        if isnan(rel_q)
+            color = colorant"gray"
+        else
+            color = weighted_color_mean(rel_q, colorant"green", colorant"red")
+        end
+        style[sa+lens] = "stroke:#$(hex(color))"
+    end
+    return D3Tree(children;
+                  text=text,
+                  tooltip=tt,
+                  style=style,
+                  link_style=link_style,
+                  title=title,
+                  kwargs...
+                 )
+end
+
+
+function D3Trees.D3Tree(tree::AZTree; title="MCTS-AZ Tree", kwargs...)
+    lens = length(tree.total_n)
+    lensa = length(tree.n)
+    len = lens + lensa
+    children = Vector{Vector{Int}}(len)
+    text = Vector{String}(len)
+    tt = fill("", len)
+    style = fill("", len)
+    link_style = fill("", len)
+    max_q = maximum(tree.q)
+    min_q = minimum(tree.q)
+
+    for s in 1:lens
+        children[s] = tree.children[s] .+ lens
+        text[s] =  @sprintf("""
+                            %25s
+                            N: %6d
+                            """,
+                            node_tag(tree.s_labels[s]),
+                            tree.total_n[s]
+                           )
+        tt[s] = """
+                $(tooltip_tag(tree.s_labels[s]))
+                N: $(tree.total_n[s])
+                """
+        for sa in tree.children[s]
+            w = 20.0*sqrt(tree.n[sa]/tree.total_n[s])
+            link_style[sa+lens] = "stroke-width:$(w)px"
+        end
+    end
+    for sa in 1:lensa
+        children[sa+lens] = collect(first(t) for t in tree.transitions[sa])
+        text[sa+lens] = @sprintf("""
+                                 %25s
+                                 Q: %6.2f
+                                 N: %6d
+                                 """,
+                                 node_tag(tree.a_labels[sa]),
+                                 tree.q[sa],
+                                 tree.n[sa]
+                                )
+        tt[sa+lens] = """
+                      $(tooltip_tag(tree.a_labels[sa]))
+                      Q: $(tree.q[sa])
+                      N: $(tree.n[sa])
+                      """
+
         rel_q = (tree.q[sa]-min_q)/(max_q-min_q)
         if isnan(rel_q)
             color = colorant"gray"
