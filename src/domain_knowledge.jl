@@ -80,8 +80,8 @@ init_N(n::Number, mdp::Union{MDP,POMDP}, s, a) = convert(Int, n)
 """
     init_P(initializer, mdp, s, a)
 
-Return a value to initialize P(s,a) to based on domain knowledge.
+Return a value to initialize P(s,a).
 """
 function init_P end
-init_P(f::Function, mdp::Union{MDP,POMDP}, s, a) = f(mdp, s, a)
-init_P(str::String, mdp::Union{MDP,POMDP}, s, a) = convert(Float64, 1/length(actions(mdp, s)))   #This is slow if complicated actions function
+init_P(estimator::NNEstimator, mdp::Union{MDP,POMDP}, s, possible_actions) = estimate_probabilities(estimator, mdp, s, possible_actions)
+init_P(str::String, mdp::Union{MDP,POMDP}, s, possible_actions) = fill(1/length(possible_actions),length(possible_actions))

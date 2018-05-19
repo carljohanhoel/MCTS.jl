@@ -15,6 +15,9 @@ export
     DPWPlanner,
     AZSolver,
     AZPlanner,
+    NNSolver,
+    NNPolicy,
+    NNEstimator,
     BeliefMCTSSolver,
     AbstractMCTSPlanner,
     AbstractMCTSSolver,
@@ -51,6 +54,7 @@ abstract type AbstractMCTSSolver <: Solver end
 abstract type AbstractStateNode end
 
 include("requirements_info.jl")
+include("nn_estimator.jl")
 include("domain_knowledge.jl")
 include("vanilla.jl")
 include("dpw_types.jl")

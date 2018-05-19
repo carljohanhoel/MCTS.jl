@@ -8,16 +8,25 @@ using NBInclude
 using POMDPToolbox
 using D3Trees
 
+##
+
 n_iter = 5000
 depth = 15
 ec = 100.0
+
+rng=MersenneTwister(53)
+
+estimator = NNEstimator(rng)
 
 solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=ec,
                   tree_in_info=true,
                   k_state=3.,
                   alpha_state=0.2,
                   enable_action_pw=false,
-                  check_repeat_state=false
+                  check_repeat_state=false,
+                  rng=rng,
+                  estimate_value=estimator,
+                  init_P=estimator
                   )
 mdp = GridWorld(5,5,
                 penalty=-1.,
@@ -33,7 +42,7 @@ a = @inferred action(policy, state)
 a, ai = @inferred action_info(policy, state)
 inchromium(D3Tree(ai[:tree],init_expand=1))
 
-
+##
 #DPW reference
 
 solver_dpw = DPWSolver(n_iterations=n_iter, depth=depth, exploration_constant=ec,
@@ -41,7 +50,7 @@ solver_dpw = DPWSolver(n_iterations=n_iter, depth=depth, exploration_constant=ec
                   k_state=3.,
                   alpha_state=0.2,
                   enable_action_pw=false,
-                  check_repeat_state=false
+                  check_repeat_state=false,
                   )
 
 policy_dpw = solve(solver_dpw, mdp)

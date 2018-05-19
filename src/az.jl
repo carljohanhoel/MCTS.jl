@@ -54,7 +54,7 @@ function POMDPToolbox.action_info(p::AZPlanner, s; tree_in_info=false)
         i = 0
         start_us = CPUtime_us()
         for i = 1:p.solver.n_iterations
-            simulate(p, snode, p.solver.depth)
+            simulate(p, snode)
             if CPUtime_us() - start_us >= p.solver.max_time * 1e6
                 break
             end
@@ -87,18 +87,15 @@ end
 """
 Return the reward for one iteration of MCTS.
 """
-function simulate(az::AZPlanner, snode::Int, d::Int)
+function simulate(az::AZPlanner, snode::Int)
     S = state_type(az.mdp)
     A = action_type(az.mdp)
     sol = az.solver
     tree = get(az.tree)
     s = tree.s_labels[snode]
-    if d == 0 || isterminal(az.mdp, s) #ZZZ Fix, remove depth, doesn't matter for AZ search
-        return 0.0
-    end
 
     # action progressive widening
-    if az.solver.enable_action_pw
+    if az.solver.enable_action_pw   #deprecated
         if length(tree.children[snode]) <= sol.k_action*tree.total_n[snode]^sol.alpha_action # criterion for new action generation
             a = next_action(az.next_action, az.mdp, s, AZStateNode(tree, snode)) # action generation step
             if !sol.check_repeat_action || !haskey(tree.a_lookup, (snode, a))
@@ -112,9 +109,11 @@ function simulate(az::AZPlanner, snode::Int, d::Int)
             end
         end
     elseif isempty(tree.children[snode])
-        for a in iterator(actions(az.mdp, s))
+        possible_actions = actions(az.mdp, s)
+        p0_vec = init_P(sol.init_P, az.mdp, s, possible_actions)   #ZZZ Fix, init_P should return NN estimate
+        for (i,a) in enumerate(possible_actions)
             n0 = init_N(sol.init_N, az.mdp, s, a)
-            p0 = init_P(sol.init_P, az.mdp, s, a)
+            p0 = p0_vec[i]
             insert_action_node!(tree, snode, a, n0,
                                 init_Q(sol.init_Q, az.mdp, s, a), p0,
                                 false)
@@ -122,7 +121,7 @@ function simulate(az::AZPlanner, snode::Int, d::Int)
         end
     end
 
-    best_UCB = -Inf
+    best_UCB = -Inf   #ZZZ Randomize selection when same value (needed?)
     sanode = 0
     tn = tree.total_n[snode]
     for child in tree.children[snode]
@@ -165,9 +164,9 @@ function simulate(az::AZPlanner, snode::Int, d::Int)
     end
 
     if new_node
-        q = r + discount(az.mdp)*estimate_value(az.solved_estimate, az.mdp, sp, d-1)
+        q = r + discount(az.mdp)*estimate_value(az.solved_estimate, az.mdp, sp, az.solver.depth)   #ZZZ Fix, esimtate_value should return NN estimate
     else
-        q = r + discount(az.mdp)*simulate(az, spnode, d-1)
+        q = r + discount(az.mdp)*simulate(az, spnode)
     end
 
     tree.n[sanode] += 1
