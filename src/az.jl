@@ -112,19 +112,19 @@ function simulate(az::AZPlanner, snode::Int)
         possible_actions = actions(az.mdp, s)
         p0_vec = init_P(sol.init_P, az.mdp, s, possible_actions)   #ZZZ Fix, init_P should return NN estimate
         for (i,a) in enumerate(possible_actions)
-            n0 = init_N(sol.init_N, az.mdp, s, a)
+            n0 = init_N(sol.init_N, az.mdp, s, a)   #sol.initN set to 0
             p0 = p0_vec[i]
             insert_action_node!(tree, snode, a, n0,
-                                init_Q(sol.init_Q, az.mdp, s, a), p0,
+                                init_Q(sol.init_Q, az.mdp, s, a), p0,   #sol.initQ set to 0
                                 false)
             tree.total_n[snode] += n0
         end
     end
 
-    best_UCB = -Inf   #ZZZ Randomize selection when same value (needed?)
+    best_UCB = -Inf
     sanode = 0
     tn = tree.total_n[snode]
-    for child in tree.children[snode]
+    for child in shuffle(az.rng,tree.children[snode])   #Randomize in case of equal UCB values
         n = tree.n[child]
         q = tree.q[child]
         p = tree.p[child]

@@ -4,6 +4,8 @@ module MCTS
 using POMDPs
 using POMDPToolbox
 
+using PyCall
+
 using Compat
 using Blink
 using CPUTime
