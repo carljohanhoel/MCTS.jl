@@ -4,30 +4,31 @@ Call to python for a neural network estimator of state value and action probabil
 """
 mutable struct NNEstimator
     rng::AbstractRNG
-    python_module::Module
+    py_class::PyCall.PyObject
 end
 
 function NNEstimator(rng::AbstractRNG, estimator_path::String) #
-    python_module = initialize_estimator(estimator_path)
-    return NNEstimator(rng, python_module)
+    py_class = initialize_estimator(estimator_path)
+    return NNEstimator(rng, py_class)
 end
 
 function initialize_estimator(estimator_path::String)
     unshift!(PyVector(pyimport("sys")["path"]), dirname(estimator_path))
     eval(parse(string("@pyimport ", basename(estimator_path), " as python_module")))
-    return python_module
+    py_class = python_module.NNEstimator()
+    return py_class
 end
 
 
 estimate_value(estimator::NNEstimator, mdp::MDP, state, depth::Int) = estimate_value(estimator, state)
 
 function estimate_value(estimator::NNEstimator, state)
-    value = estimator.python_module.estimate_value(state)
+    value = estimator.py_class[:estimate_value](state)
     return value   #ZZZ Fiz, get from NN
 end
 
 function estimate_probabilities(estimator::NNEstimator, state, possible_actions)
-    probabilities = estimator.python_module.estimate_probabilities(state,possible_actions)
+    probabilities = estimator.py_class[:estimate_probabilities](state,possible_actions)
     return probabilities
 end
 
