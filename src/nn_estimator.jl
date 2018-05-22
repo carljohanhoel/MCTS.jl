@@ -22,14 +22,20 @@ end
 
 estimate_value(estimator::NNEstimator, mdp::MDP, state, depth::Int) = estimate_value(estimator, state)
 
-function estimate_value(estimator::NNEstimator, state)
-    value = estimator.py_class[:estimate_value](state)
+function estimate_value(estimator::NNEstimator, converted_state)
+    value = estimator.py_class[:estimate_value](converted_state)
     return value   #ZZZ Fiz, get from NN
 end
 
-function estimate_probabilities(estimator::NNEstimator, state, possible_actions)
-    probabilities = estimator.py_class[:estimate_probabilities](state,possible_actions)
+function estimate_probabilities(estimator::NNEstimator, converted_state, possible_actions)
+    probabilities = estimator.py_class[:estimate_probabilities](converted_state,possible_actions)
     return probabilities
+end
+
+#Needs to be defined for each problem to fit the input of the nerual network
+function convert_state(state::Type)
+    converted_state = state
+    return converted_state
 end
 
 
