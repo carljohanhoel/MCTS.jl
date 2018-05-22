@@ -22,12 +22,14 @@ end
 
 estimate_value(estimator::NNEstimator, mdp::MDP, state, depth::Int) = estimate_value(estimator, state)
 
-function estimate_value(estimator::NNEstimator, converted_state)
+function estimate_value(estimator::NNEstimator, state)
+    converted_state = convert_state(state)
     value = estimator.py_class[:estimate_value](converted_state)
-    return value   #ZZZ Fiz, get from NN
+    return value
 end
 
-function estimate_probabilities(estimator::NNEstimator, converted_state, possible_actions)
+function estimate_probabilities(estimator::NNEstimator, state, possible_actions)
+    converted_state = convert_state(state)
     probabilities = estimator.py_class[:estimate_probabilities](converted_state,possible_actions)
     return probabilities
 end
@@ -38,6 +40,14 @@ function convert_state(state::Type)
     return converted_state
 end
 
+#Simple example for GridWorld, here for tests. Remove later.
+using POMDPModels
+function convert_state(state::GridWorldState)
+    converted_state = Array{Float64}(1,2)
+    converted_state[1] = state.x
+    converted_state[2] = state.y
+    return converted_state
+end
 
 ### Neural network policy ###
 """

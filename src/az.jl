@@ -110,7 +110,7 @@ function simulate(az::AZPlanner, snode::Int)
         end
     elseif isempty(tree.children[snode])
         possible_actions = actions(az.mdp, s)
-        p0_vec = init_P(sol.init_P, az.mdp, s, possible_actions)   #ZZZ Fix, init_P should return NN estimate
+        p0_vec = init_P(sol.init_P, az.mdp, s, possible_actions)
         for (i,a) in enumerate(possible_actions)
             n0 = init_N(sol.init_N, az.mdp, s, a)   #sol.initN set to 0
             p0 = p0_vec[i]
@@ -164,7 +164,7 @@ function simulate(az::AZPlanner, snode::Int)
     end
 
     if new_node
-        q = r + discount(az.mdp)*estimate_value(az.solved_estimate, az.mdp, sp, az.solver.depth)   #ZZZ Fix, esimtate_value should return NN estimate
+        q = r + discount(az.mdp)*estimate_value(az.solved_estimate, az.mdp, sp, az.solver.depth)
     else
         q = r + discount(az.mdp)*simulate(az, spnode)
     end
