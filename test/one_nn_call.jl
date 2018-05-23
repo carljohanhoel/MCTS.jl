@@ -22,12 +22,13 @@ state = GridWorldState(1,1)
 
 vec_state = convert_state(state)
 
-possible_actions = actions(mdp, vec_state)
+allowed_actions = [true true false true]
+allowed_actions = [1.0, 1.0, 0.0, 1.0]
 
 v = estimator.py_class[:estimate_value](vec_state)
-p = estimator.py_class[:estimate_probabilities](vec_state, possible_actions)
+p = estimator.py_class[:estimate_distribution](vec_state, allowed_actions)
 print(v)
 print(p)
 
-estimator.py_class[:debug_save_input](vec_state, possible_actions)
+estimator.py_class[:debug_save_input](vec_state, allowed_actions)
 estimator.py_class[:debug_print_n_calls]()

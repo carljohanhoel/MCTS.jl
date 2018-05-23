@@ -92,6 +92,7 @@ mutable struct AZSolver <: AbstractMCTSSolver
     alpha_action::Float64
     k_state::Float64
     alpha_state::Float64
+    tau::Float64
     keep_tree::Bool
     enable_action_pw::Bool
     check_repeat_state::Bool
@@ -119,6 +120,7 @@ function AZSolver(;depth::Int=10,
                     alpha_action::Float64=0.5,
                     k_state::Float64=10.0,
                     alpha_state::Float64=0.5,
+                    tau::Float64=1., #temperature
                     keep_tree::Bool=false,
                     enable_action_pw::Bool=true,
                     check_repeat_state::Bool=true,
@@ -132,7 +134,7 @@ function AZSolver(;depth::Int=10,
                     next_action::Any = RandomActionGenerator(rng),
                     default_action::Any = ExceptionRethrow()
                    )
-    AZSolver(depth, exploration_constant, n_iterations, max_time, k_action, alpha_action, k_state, alpha_state, keep_tree, enable_action_pw, check_repeat_state, check_repeat_action, tree_in_info, rng, estimate_value, init_Q, init_N, init_P, next_action, default_action)
+    AZSolver(depth, exploration_constant, n_iterations, max_time, k_action, alpha_action, k_state, alpha_state, tau, keep_tree, enable_action_pw, check_repeat_state, check_repeat_action, tree_in_info, rng, estimate_value, init_Q, init_N, init_P, next_action, default_action)
 end
 
 #=

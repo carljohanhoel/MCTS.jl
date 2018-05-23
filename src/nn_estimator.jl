@@ -28,10 +28,10 @@ function estimate_value(estimator::NNEstimator, state)
     return value
 end
 
-function estimate_probabilities(estimator::NNEstimator, state, possible_actions)
+function estimate_distribution(estimator::NNEstimator, state, allowed_actions)
     converted_state = convert_state(state)
-    probabilities = estimator.py_class[:estimate_probabilities](converted_state,possible_actions)
-    return probabilities
+    dist = estimator.py_class[:estimate_distribution](converted_state,allowed_actions)
+    return dist
 end
 
 #Needs to be defined for each problem to fit the input of the nerual network

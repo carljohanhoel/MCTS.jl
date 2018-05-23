@@ -65,16 +65,28 @@ function POMDPToolbox.action_info(p::AZPlanner, s; tree_in_info=false)
             info[:tree] = tree
         end
 
-        best_Q = -Inf   #Fix section below, pick action from temperature
-        sanode = 0
-        for child in tree.children[snode]
-            if tree.q[child] > best_Q
-                best_Q = tree.q[child]
-                sanode = child
-            end
+        all_actions = actions(p.mdp)   #Note, action nodes in the tree have the same order as here
+        N = zeros(length(all_actions))
+        N_sum = tree.total_n[snode]
+        for (i,child) in enumerate(tree.children[snode])
+            N[i] = tree.n[child]
         end
-        # XXX some publications say to choose action that has been visited the most
-        a = tree.a_labels[sanode] # choose action with highest approximate value
+        action_distribution = (N./N_sum).^p.solver.tau
+        a = sample(all_actions,Weights(action_distribution))
+
+        info[:action_distribution] = action_distribution
+
+
+        # best_Q = -Inf   #ZZZ Fix section below, pick action from temperature
+        # sanode = 0
+        # for child in tree.children[snode]
+        #     if tree.q[child] > best_Q
+        #         best_Q = tree.q[child]
+        #         sanode = child
+        #     end
+        # end
+        # # XXX some publications say to choose action that has been visited the most
+        # a = tree.a_labels[sanode] # choose action with highest approximate value
     catch ex
         a = convert(action_type(p.mdp), default_action(p.solver.default_action, p.mdp, s, ex))
         info[:exception] = ex
@@ -109,9 +121,19 @@ function simulate(az::AZPlanner, snode::Int)
             end
         end
     elseif isempty(tree.children[snode])
-        possible_actions = actions(az.mdp, s)
-        p0_vec = init_P(sol.init_P, az.mdp, s, possible_actions)
-        for (i,a) in enumerate(possible_actions)
+        allowed_actions = actions(az.mdp, s)   #This is handled a bit weird to make it compatible with existing structure of Multilane.jl
+        all_actions = actions(az.mdp)
+        if length(allowed_actions) == length(all_actions)
+            allowed_actions_vec = ones(Float64, length(all_actions))
+        else
+            allowed_actions_vec = zeroes(Float64, length(all_actions))
+            for idx in collect(allowed_actions.acceptable)
+                allowed_actions_vec[idx] = 1.0
+            end
+        end
+
+        p0_vec = init_P(sol.init_P, az.mdp, s, allowed_actions_vec)
+        for (i,a) in enumerate(all_actions)   #Loop through all actions, even the forbidden ones, but set their probabilities to 0
             n0 = init_N(sol.init_N, az.mdp, s, a)   #sol.initN set to 0
             p0 = p0_vec[i]
             insert_action_node!(tree, snode, a, n0,

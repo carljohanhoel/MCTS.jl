@@ -83,5 +83,5 @@ init_N(n::Number, mdp::Union{MDP,POMDP}, s, a) = convert(Int, n)
 Return a value to initialize P(s,a).
 """
 function init_P end
-init_P(estimator::NNEstimator, mdp::Union{MDP,POMDP}, s, possible_actions) = estimate_probabilities(estimator, s, possible_actions)
+init_P(estimator::NNEstimator, mdp::Union{MDP,POMDP}, s, possible_actions) = estimate_distribution(estimator, s, possible_actions)
 init_P(str::String, mdp::Union{MDP,POMDP}, s, possible_actions) = fill(1/length(possible_actions),length(possible_actions))

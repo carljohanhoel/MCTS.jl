@@ -9,9 +9,9 @@ using D3Trees
 
 ##
 
-n_iter = 5000
+n_iter = 1000
 depth = 15
-ec = 100.0
+ec = 10.0
 
 rng=MersenneTwister(53)
 rng_dpw = deepcopy(rng)
