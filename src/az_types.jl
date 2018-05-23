@@ -125,10 +125,10 @@ function AZSolver(;depth::Int=10,
                     check_repeat_action::Bool=true,
                     tree_in_info::Bool=false,
                     rng::AbstractRNG=Base.GLOBAL_RNG,
-                    estimate_value::Any = RolloutEstimator(RandomSolver(rng)), #ZZZ Fix, call NN
+                    estimate_value::Any = RolloutEstimator(RandomSolver(rng)),
                     init_Q::Any = 0.0,
                     init_N::Any = 0,
-                    init_P::Any = "uniform",   #Fix, call NN
+                    init_P::Any = "uniform",   #Standard gives uniform probability
                     next_action::Any = RandomActionGenerator(rng),
                     default_action::Any = ExceptionRethrow()
                    )
