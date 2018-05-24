@@ -7,15 +7,15 @@ mutable struct NNEstimator
     py_class::PyCall.PyObject
 end
 
-function NNEstimator(rng::AbstractRNG, estimator_path::String) #
-    py_class = initialize_estimator(estimator_path)
+function NNEstimator(rng::AbstractRNG, estimator_path::String, n_states::Int, n_actions::Int) #
+    py_class = initialize_estimator(estimator_path, n_states, n_actions)
     return NNEstimator(rng, py_class)
 end
 
-function initialize_estimator(estimator_path::String)
+function initialize_estimator(estimator_path::String, n_states::Int, n_actions::Int)
     unshift!(PyVector(pyimport("sys")["path"]), dirname(estimator_path))
     eval(parse(string("@pyimport ", basename(estimator_path), " as python_module")))
-    py_class = python_module.NNEstimator()
+    py_class = python_module.NNEstimator(n_states, n_actions)
     return py_class
 end
 
@@ -43,9 +43,10 @@ end
 #Simple example for GridWorld, here for tests. Remove later.
 using POMDPModels
 function convert_state(state::GridWorldState)
-    converted_state = Array{Float64}(1,2)
+    converted_state = Array{Float64}(1,3)
     converted_state[1] = state.x
     converted_state[2] = state.y
+    converted_state[3] = state.done
     return converted_state
 end
 

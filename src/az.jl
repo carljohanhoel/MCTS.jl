@@ -43,12 +43,14 @@ function POMDPToolbox.action_info(p::AZPlanner, s; tree_in_info=false)
             if haskey(tree.s_lookup, s)
                 snode = tree.s_lookup[s]
             else
-                snode = insert_state_node!(tree, s, true)
+                v0 = estimate_value(p.solved_estimate, p.mdp, s, p.solver.depth)
+                snode = insert_state_node!(tree, s, v0)
             end
         else
             tree = AZTree{S,A}(p.solver.n_iterations)
             p.tree = Nullable(tree)
-            snode = insert_state_node!(tree, s, p.solver.check_repeat_state)
+            v0 = estimate_value(p.solved_estimate, p.mdp, s, p.solver.depth)
+            snode = insert_state_node!(tree, s, v0, p.solver.check_repeat_state)
         end
 
         i = 0
@@ -126,7 +128,7 @@ function simulate(az::AZPlanner, snode::Int)
         if length(allowed_actions) == length(all_actions)
             allowed_actions_vec = ones(Float64, length(all_actions))
         else
-            allowed_actions_vec = zeroes(Float64, length(all_actions))
+            allowed_actions_vec = zeros(Float64, length(all_actions))
             for idx in collect(allowed_actions.acceptable)
                 allowed_actions_vec[idx] = 1.0
             end
@@ -170,7 +172,8 @@ function simulate(az::AZPlanner, snode::Int)
         spnode = sol.check_repeat_state ? get(tree.s_lookup, sp, 0) : 0
 
         if spnode == 0 # there was not a state node for sp already in the tree
-            spnode = insert_state_node!(tree, sp, sol.keep_tree || sol.check_repeat_state)
+            v0 = estimate_value(az.solved_estimate, az.mdp, sp, az.solver.depth)
+            spnode = insert_state_node!(tree, sp, v0, sol.keep_tree || sol.check_repeat_state)
             new_node = true
         end
         push!(tree.transitions[sanode], (spnode, r))
@@ -186,7 +189,7 @@ function simulate(az::AZPlanner, snode::Int)
     end
 
     if new_node
-        q = r + discount(az.mdp)*estimate_value(az.solved_estimate, az.mdp, sp, az.solver.depth)
+        q = r + discount(az.mdp)*tree.v0[spnode]
     else
         q = r + discount(az.mdp)*simulate(az, spnode)
     end

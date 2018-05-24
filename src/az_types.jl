@@ -169,6 +169,7 @@ mutable struct AZTree{S,A}
     n::Vector{Int}
     q::Vector{Float64}
     p::Vector{Float64}
+    v0::Vector{Float64}
     transitions::Vector{Vector{Tuple{Int,Float64}}}
     a_labels::Vector{A}
     a_lookup::Dict{Tuple{Int,A}, Int}
@@ -188,6 +189,7 @@ mutable struct AZTree{S,A}
                    sizehint!(Int[], sz),
                    sizehint!(Float64[], sz),
                    sizehint!(Float64[], sz),
+                   sizehint!(Float64[], sz),
                    sizehint!(Vector{Tuple{Int,Float64}}[], sz),
                    sizehint!(A[], sz),
                    Dict{Tuple{Int,A}, Int}(),
@@ -198,10 +200,11 @@ mutable struct AZTree{S,A}
     end
 end
 
-function insert_state_node!{S,A}(tree::AZTree{S,A}, s::S, maintain_s_lookup=true)
+function insert_state_node!{S,A}(tree::AZTree{S,A}, s::S, v0::Float64, maintain_s_lookup=true)
     push!(tree.total_n, 0)
     push!(tree.children, Int[])
     push!(tree.s_labels, s)
+    push!(tree.v0, v0)
     snode = length(tree.total_n)
     if maintain_s_lookup
         tree.s_lookup[s] = snode

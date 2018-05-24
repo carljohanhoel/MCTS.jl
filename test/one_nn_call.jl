@@ -2,25 +2,21 @@ using PyCall
 using MCTS
 using POMDPModels
 
-#Simple example for GridWorld
-function convert_state(state::GridWorldState)
-    converted_state = Array{Float64}(1,2)
-    converted_state[1] = state.x
-    converted_state[2] = state.y
-    return converted_state
-end
-
-rng = MersenneTwister(12)
-estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/nn_estimator"
-estimator = NNEstimator(rng, estimator_path)
-
 mdp = GridWorld(5,5,
                 penalty=-1.,
                 rs=[GridWorldState(3,3),GridWorldState(3,1),GridWorldState(5,5),GridWorldState(3,5)],
                 )
 state = GridWorldState(1,1)
 
-vec_state = convert_state(state)
+vec_state = MCTS.convert_state(state)
+
+n_s = length(vec_state)
+n_a = n_actions(mdp)
+
+rng = MersenneTwister(12)
+estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/nn_estimator"
+estimator = NNEstimator(rng, estimator_path, n_s, n_a)
+
 
 allowed_actions = [true true false true]
 allowed_actions = [1.0, 1.0, 0.0, 1.0]

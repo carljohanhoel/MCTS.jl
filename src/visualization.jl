@@ -253,13 +253,16 @@ function D3Trees.D3Tree(tree::AZTree; title="MCTS-AZ Tree", kwargs...)
         text[s] =  @sprintf("""
                             %25s
                             N: %6d
+                            V0: %6.2f
                             """,
                             node_tag(tree.s_labels[s]),
-                            tree.total_n[s]
+                            tree.total_n[s],
+                            tree.v0[s]
                            )
         tt[s] = """
                 $(tooltip_tag(tree.s_labels[s]))
                 N: $(tree.total_n[s])
+                V0: $(tree.v0[s])
                 """
         for sa in tree.children[s]
             w = 20.0*sqrt(tree.n[sa]/tree.total_n[s])
@@ -272,15 +275,18 @@ function D3Trees.D3Tree(tree::AZTree; title="MCTS-AZ Tree", kwargs...)
                                  %25s
                                  Q: %6.2f
                                  N: %6d
+                                 P: %6.2f
                                  """,
                                  node_tag(tree.a_labels[sa]),
                                  tree.q[sa],
-                                 tree.n[sa]
+                                 tree.n[sa],
+                                 tree.p[sa]
                                 )
         tt[sa+lens] = """
                       $(tooltip_tag(tree.a_labels[sa]))
                       Q: $(tree.q[sa])
                       N: $(tree.n[sa])
+                      P: $(tree.p[sa])
                       """
 
         rel_q = (tree.q[sa]-min_q)/(max_q-min_q)
