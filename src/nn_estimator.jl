@@ -34,6 +34,11 @@ function estimate_distribution(estimator::NNEstimator, state, allowed_actions)
     return dist
 end
 
+function update_network(estimator::NNEstimator, states, dists, vals)
+    converted_states = convert_state(states)
+    estimator.py_class[:update_network](converted_states, dists, vals)
+end
+
 #Needs to be defined for each problem to fit the input of the nerual network
 function convert_state(state::Type)
     converted_state = state
@@ -42,6 +47,14 @@ end
 
 #Simple example for GridWorld, here for tests. Remove later.
 using POMDPModels
+function convert_state(state::Vector{GridWorldState})
+    n = length(state)
+    converted_state = Array{Float64}(n,3)
+    for i in 1:n
+        converted_state[i,:] = convert_state(state[i])
+    end
+    return converted_state
+end
 function convert_state(state::GridWorldState)
     converted_state = Array{Float64}(1,3)
     converted_state[1] = state.x

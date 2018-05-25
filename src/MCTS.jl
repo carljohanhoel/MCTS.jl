@@ -34,6 +34,8 @@ export
     next_action,
     clear_tree!,
     estimate_value,
+    estimate_distribution,
+    update_network,
     init_N,
     init_Q,
     children,

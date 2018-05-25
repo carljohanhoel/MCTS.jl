@@ -70,3 +70,15 @@ for (i,state) in enumerate(new_states[end-1:-1:1])
    new_values[end-i] = value
    new_distributions[i,:] = hist.ainfo_hist[i][:action_distribution]
 end
+
+##
+#Update
+update_network(solver.estimate_value, new_states[1:end-1], new_distributions, new_values[1:end-1])
+
+
+vec_state =  MCTS.convert_state(initial_state)
+allowed_actions = [1.0, 1.0, 1.0, 1.0]
+v = estimator.py_class[:estimate_value](vec_state)
+p = estimator.py_class[:estimate_distribution](vec_state, allowed_actions)
+println(v)
+print(p)
