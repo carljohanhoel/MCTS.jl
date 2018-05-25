@@ -21,6 +21,7 @@ export
     NNSolver,
     NNPolicy,
     NNEstimator,
+    Trainer,
     BeliefMCTSSolver,
     AbstractMCTSPlanner,
     AbstractMCTSSolver,
@@ -41,7 +42,8 @@ export
     children,
     n_children,
     isroot,
-    default_action
+    default_action,
+    train
 
 export
     AbstractStateNode,
@@ -60,6 +62,7 @@ abstract type AbstractStateNode end
 
 include("requirements_info.jl")
 include("nn_estimator.jl")
+include("trainer.jl")
 include("domain_knowledge.jl")
 include("vanilla.jl")
 include("dpw_types.jl")

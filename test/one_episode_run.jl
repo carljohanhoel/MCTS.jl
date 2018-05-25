@@ -43,8 +43,8 @@ policy = solve(solver, mdp)
 
 
 
-sim = HistoryRecorder(rng=rng, max_steps=100, show_progress=true) # initialize a random number generator
-hist = simulate(sim, mdp, policy, initial_state)   #Run simulation, here with standard IDM&MOBIL model as policy
+sim = HistoryRecorder(rng=rng, max_steps=100, show_progress=true)
+hist = simulate(sim, mdp, policy, initial_state)
 
 println("sim done")
 estimator.py_class[:debug_print_n_calls]()
@@ -58,7 +58,7 @@ inchromium(D3Tree(hist.ainfo_hist[step][:tree],init_expand=1))
 #Extract training samples
 new_states = hist.state_hist
 new_values = Vector{Float64}(length(new_states))
-new_distributions = Array{Float64}(length(new_states)-1,length(actions(mdp))) #Fix 4, #actions
+new_distributions = Array{Float64}(length(new_states)-1,length(actions(mdp)))
 
 end_state = new_states[end]
 end_value = end_state.done ? 0 : estimate_value(solver.estimate_value, end_state)
