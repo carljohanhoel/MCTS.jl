@@ -43,7 +43,8 @@ export
     n_children,
     isroot,
     default_action,
-    train
+    train,
+    convert_state
 
 export
     AbstractStateNode,

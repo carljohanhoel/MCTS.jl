@@ -65,7 +65,7 @@ end_value = end_state.done ? 0 : estimate_value(solver.estimate_value, end_state
 new_values[end] = end_value
 value = end_value
 for (i,state) in enumerate(new_states[end-1:-1:1])
-   print(state)
+   # print(state)
    value = hist.reward_hist[end+1-i] + mdp.discount_factor*value
    new_values[end-i] = value
    new_distributions[i,:] = hist.ainfo_hist[i][:action_distribution]
@@ -73,9 +73,10 @@ end
 
 ##
 #Update
+println("Update network")
 update_network(solver.estimate_value, new_states[1:end-1], new_distributions, new_values[1:end-1])
 
-
+##
 vec_state =  MCTS.convert_state(initial_state)
 allowed_actions = [1.0, 1.0, 1.0, 1.0]
 v = estimator.py_class[:estimate_value](vec_state)

@@ -28,3 +28,7 @@ print(p)
 
 estimator.py_class[:debug_save_input](vec_state, allowed_actions)
 estimator.py_class[:debug_print_n_calls]()
+
+estimator.py_class[:save_network](dirname(dirname(estimator_path))*"/Logs/ttt")
+
+estimator.py_class[:load_network](dirname(dirname(estimator_path))*"/Logs/ttt")

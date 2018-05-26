@@ -10,23 +10,17 @@ Trains the neural network by:
 
 mutable struct Trainer
     rng::AbstractRNG
-    n_steps::Int
-
-
-    # options
+    training_steps::Int
+    save_freq::Int
     show_progress::Bool
-
-    # optional: if these are null, they will be ignored
-    initial_state_generator::Nullable{Any}
-
 end
 
 function Trainer(;rng=MersenneTwister(rand(UInt32)),
-                  n_steps::Int=1,
+                  training_steps::Int=1,
+                  save_freq::Int=Inf,
                   show_progress=false,
-                  initial_state_generator=Nullable{Any}(),
                  )
-    return Trainer(rng, n_steps, show_progress, initial_state_generator)
+    return Trainer(rng, training_steps, save_freq, show_progress)
 end
 
 
@@ -34,20 +28,18 @@ function train{S,A}(trainer::Trainer,
                     sim::HistoryRecorder,
                     mdp::MDP{S,A}, policy::Policy
                    )
-    n_steps = trainer.n_steps
+    training_steps = trainer.training_steps
     if trainer.show_progress
-        prog = POMDPToolbox.Progress(n_steps, "Training..." )
+        prog = POMDPToolbox.Progress(training_steps, "Training..." )
     end
 
     step = 1
-    while step <= n_steps
+    while step <= training_steps
         #Generate initial state
-        #ZZZ
-        initial_state = GridWorldState(1,1)
-        #ZZZ
+        s_initial = initial_state(mdp,trainer.rng)
 
         #Simulate one episode
-        hist = POMDPs.simulate(sim, mdp, policy, initial_state)
+        hist = POMDPs.simulate(sim, mdp, policy, s_initial)
 
         #Extract training samples
         new_states = hist.state_hist
@@ -66,6 +58,10 @@ function train{S,A}(trainer::Trainer,
 
         #Update network
         update_network(policy.solver.estimate_value, new_states[1:end-1], new_distributions, new_values[1:end-1])
+
+        if step%trainer.save_freq==0
+            save_network(policy.solver.estimate_value, dirname(dirname(policy.solver.estimate_value.estimator_path))*"/Logs/ttt")
+        end
 
         step += 1
 
