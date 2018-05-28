@@ -64,7 +64,7 @@ function POMDPToolbox.action_info(p::DPWPlanner, s; tree_in_info=false)
         if p.solver.tree_in_info || tree_in_info
             info[:tree] = tree
         end
-        
+
         best_Q = -Inf
         sanode = 0
         for child in tree.children[snode]
@@ -123,7 +123,7 @@ function simulate(dpw::DPWPlanner, snode::Int, d::Int)
     best_UCB = -Inf
     sanode = 0
     ltn = log(tree.total_n[snode])
-    for child in tree.children[snode]
+    for child in shuffle(az.rng,tree.children[snode])   #Randomize in case of equal UCB values
         n = tree.n[child]
         q = tree.q[child]
         c = sol.exploration_constant # for clarity
@@ -155,7 +155,7 @@ function simulate(dpw::DPWPlanner, snode::Int, d::Int)
         end
         push!(tree.transitions[sanode], (spnode, r))
 
-        if !sol.check_repeat_state 
+        if !sol.check_repeat_state
             tree.n_a_children[sanode] += 1
         elseif !((sanode,spnode) in tree.unique_transitions)
             push!(tree.unique_transitions, (sanode,spnode))
