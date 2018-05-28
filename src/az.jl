@@ -107,6 +107,9 @@ function simulate(az::AZPlanner, snode::Int)
     sol = az.solver
     tree = get(az.tree)
     s = tree.s_labels[snode]
+    if isterminal(az.mdp, s)
+        return 0.0
+    end
 
     # action progressive widening
     if az.solver.enable_action_pw   #deprecated
