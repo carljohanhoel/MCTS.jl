@@ -123,7 +123,7 @@ function simulate(dpw::DPWPlanner, snode::Int, d::Int)
     best_UCB = -Inf
     sanode = 0
     ltn = log(tree.total_n[snode])
-    for child in shuffle(az.rng,tree.children[snode])   #Randomize in case of equal UCB values
+    for child in shuffle(dpw.rng,tree.children[snode])   #Randomize in case of equal UCB values
         n = tree.n[child]
         q = tree.q[child]
         c = sol.exploration_constant # for clarity
