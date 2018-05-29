@@ -8,15 +8,15 @@ mutable struct NNEstimator
     estimator_path::String
 end
 
-function NNEstimator(rng::AbstractRNG, estimator_path::String, n_states::Int, n_actions::Int) #
-    py_class = initialize_estimator(estimator_path, n_states, n_actions)
+function NNEstimator(rng::AbstractRNG, estimator_path::String, log_path::String, n_states::Int, n_actions::Int) #
+    py_class = initialize_estimator(estimator_path, log_path, n_states, n_actions)
     return NNEstimator(rng, py_class, estimator_path)
 end
 
-function initialize_estimator(estimator_path::String, n_states::Int, n_actions::Int)
+function initialize_estimator(estimator_path::String, log_path::String, n_states::Int, n_actions::Int)
     unshift!(PyVector(pyimport("sys")["path"]), dirname(estimator_path))
     eval(parse(string("@pyimport ", basename(estimator_path), " as python_module")))
-    py_class = python_module.NNEstimator(n_states, n_actions)
+    py_class = python_module.NNEstimator(n_states, n_actions, log_path)
     return py_class
 end
 

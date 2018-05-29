@@ -27,7 +27,8 @@ s_initial = GridWorldState(1,1)
 n_s = length(MCTS.convert_state(s_initial))
 n_a = n_actions(mdp)
 estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/nn_estimator"
-estimator = NNEstimator(rng, estimator_path, n_s, n_a)
+log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS")
+estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a)
 
 solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=c_puct,
                k_state=3.,
@@ -45,7 +46,6 @@ policy = solve(solver, mdp)
 sim = HistoryRecorder(rng=rng, max_steps=20, show_progress=false)
 
 ##
-log_dir = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS")
-trainer = Trainer(rng=rng, training_steps=100, save_freq=20, eval_freq=20, eval_eps=3, show_progress=true, log_dir=log_dir)
-# trainer = Trainer(rng=rng, training_steps=100000, save_freq=10000, eval_freq=10000, eval_eps=100, show_progress=true, log_dir=log_dir)
+trainer = Trainer(rng=rng, training_steps=1000, save_freq=20, eval_freq=20, eval_eps=3, show_progress=true, log_dir=log_path)
+# trainer = Trainer(rng=rng, training_steps=50000, save_freq=5000, eval_freq=5000, eval_eps=100, show_progress=true, log_dir=log_path)
 train(trainer, sim, mdp, policy)

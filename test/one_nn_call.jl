@@ -15,7 +15,8 @@ n_a = n_actions(mdp)
 
 rng = MersenneTwister(12)
 estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/nn_estimator"
-estimator = NNEstimator(rng, estimator_path, n_s, n_a)
+log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS")
+estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a)
 
 
 allowed_actions = [true true false true]
