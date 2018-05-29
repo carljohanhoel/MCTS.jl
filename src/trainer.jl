@@ -12,15 +12,21 @@ mutable struct Trainer
     rng::AbstractRNG
     training_steps::Int
     save_freq::Int
+    eval_freq::Int
+    eval_eps::Int
     show_progress::Bool
+    log_dir::String
 end
 
 function Trainer(;rng=MersenneTwister(rand(UInt32)),
                   training_steps::Int=1,
                   save_freq::Int=Inf,
+                  eval_freq::Int=Inf,
+                  eval_eps::Int=1,
                   show_progress=false,
+                  log_dir::String="./"
                  )
-    return Trainer(rng, training_steps, save_freq, show_progress)
+    return Trainer(rng, training_steps, save_freq, eval_freq, eval_eps, show_progress, log_dir)
 end
 
 
@@ -33,6 +39,8 @@ function train{S,A}(trainer::Trainer,
         prog = POMDPToolbox.Progress(training_steps, "Training..." )
     end
 
+    n_saves = 0
+    n_evals = 0
     step = 1
     while step <= training_steps
         #Generate initial state
@@ -42,6 +50,7 @@ function train{S,A}(trainer::Trainer,
         hist = POMDPs.simulate(sim, mdp, policy, s_initial)
 
         #Extract training samples
+        n_new_samples = length(hist.state_hist)
         new_states = hist.state_hist
         new_values = Vector{Float64}(length(new_states))
         new_distributions = Array{Float64}(length(new_states)-1,length(actions(mdp)))
@@ -59,14 +68,34 @@ function train{S,A}(trainer::Trainer,
         #Update network
         update_network(policy.solver.estimate_value, new_states[1:end-1], new_distributions, new_values[1:end-1])
 
-        if step%trainer.save_freq==0
-            save_network(policy.solver.estimate_value, dirname(dirname(policy.solver.estimate_value.estimator_path))*"/Logs/ttt")
+        step += n_new_samples
+
+
+        if div(step,trainer.save_freq) > n_saves
+        # if step%trainer.save_freq == 0
+            filename = trainer.log_dir*"/"*string(step)
+            save_network(policy.solver.estimate_value, filename)
+            n_saves+=1
         end
 
-        step += 1
+        if div(step,trainer.eval_freq) > n_evals
+            eval_eps = 1
+            policy.training_phase=false
+            episode_reward = []
+            while eval_eps <= trainer.eval_eps
+                hist = POMDPs.simulate(sim, mdp, policy, s_initial)
+                push!(episode_reward, sum(hist.reward_hist))
+                eval_eps+=1
+            end
+            open(trainer.log_dir*"/"*"evalResults.txt","a") do f
+                writedlm(f, [[step, mean(episode_reward), episode_reward]], ", ")
+            end
+            policy.training_phase=true
+            n_evals+=1
+        end
 
         if trainer.show_progress
-            POMDPToolbox.ProgressMeter.next!(prog)
+            POMDPToolbox.ProgressMeter.update!(prog, step)
         end
     end
 

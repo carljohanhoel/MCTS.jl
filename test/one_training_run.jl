@@ -17,8 +17,10 @@ rng=MersenneTwister(53)
 
 
 mdp = GridWorld(5,5,
-                penalty=-1.,
+                penalty=0.,
                 rs=[GridWorldState(3,3),GridWorldState(3,1),GridWorldState(5,5),GridWorldState(3,5)],
+                tp = 0.8,
+                terminals = [GridWorldState(3,3),GridWorldState(3,1),GridWorldState(5,5),GridWorldState(3,5)],
                 )
 s_initial = GridWorldState(1,1)
 
@@ -40,8 +42,10 @@ solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=c_puct,
 policy = solve(solver, mdp)
 
 
-sim = HistoryRecorder(rng=rng, max_steps=100, show_progress=false)
+sim = HistoryRecorder(rng=rng, max_steps=20, show_progress=false)
 
-# trainer = Trainer(rng=rng, training_steps=2, save_freq=1, show_progress=true)
-trainer = Trainer(rng=rng, training_steps=10000, save_freq=1000, show_progress=true)
+##
+log_dir = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS")
+trainer = Trainer(rng=rng, training_steps=100, save_freq=20, eval_freq=20, eval_eps=3, show_progress=true, log_dir=log_dir)
+# trainer = Trainer(rng=rng, training_steps=100000, save_freq=10000, eval_freq=10000, eval_eps=100, show_progress=true, log_dir=log_dir)
 train(trainer, sim, mdp, policy)

@@ -2,7 +2,7 @@ function POMDPs.solve(solver::AZSolver, mdp::Union{POMDP,MDP})
     S = state_type(mdp)
     A = action_type(mdp)
     se = convert_estimator(solver.estimate_value, solver, mdp)
-    return AZPlanner(solver, mdp, Nullable{AZTree{S,A}}(), se, solver.next_action, solver.rng)
+    return AZPlanner(solver, mdp, Nullable{AZTree{S,A}}(), se, solver.next_action, solver.rng, true)
 end
 
 """
@@ -74,21 +74,14 @@ function POMDPToolbox.action_info(p::AZPlanner, s; tree_in_info=false)
             N[i] = tree.n[child]
         end
         action_distribution = (N./N_sum).^p.solver.tau
-        a = sample(all_actions,Weights(action_distribution))
+        if p.training_phase
+            a = sample(all_actions,Weights(action_distribution))
+        else
+            a = all_actions[indmax(action_distribution)]
+        end
 
         info[:action_distribution] = action_distribution
 
-
-        # best_Q = -Inf   #ZZZ Fix section below, pick action from temperature
-        # sanode = 0
-        # for child in tree.children[snode]
-        #     if tree.q[child] > best_Q
-        #         best_Q = tree.q[child]
-        #         sanode = child
-        #     end
-        # end
-        # # XXX some publications say to choose action that has been visited the most
-        # a = tree.a_labels[sanode] # choose action with highest approximate value
     catch ex
         a = convert(action_type(p.mdp), default_action(p.solver.default_action, p.mdp, s, ex))
         info[:exception] = ex

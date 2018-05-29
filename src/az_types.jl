@@ -245,16 +245,18 @@ mutable struct AZPlanner{P<:Union{MDP,POMDP}, S, A, SE, NA, RNG} <: AbstractMCTS
     solved_estimate::SE
     next_action::NA
     rng::RNG
+    training_phase::Bool
 end
 
-function AZPlanner{S,A}(solver::AZSolver, mdp::Union{POMDP{S,A},MDP{S,A}})
+function AZPlanner{S,A}(solver::AZSolver, mdp::Union{POMDP{S,A},MDP{S,A}}, training_phase::Bool)
     se = convert_estimator(solver.estimate_value, solver, mdp)
     return AZPlanner(solver,
                       mdp,
                       Nullable{AZTree{S,A}},
                       se,
                       solver.next_action,
-                      solver.rng
+                      solver.rng,
+                      training_phase
                      )
 end
 

@@ -18,8 +18,10 @@ rng_dpw = deepcopy(rng)
 
 
 mdp = GridWorld(5,5,
-                penalty=-1.,
+                penalty=0.,
                 rs=[GridWorldState(3,3),GridWorldState(3,1),GridWorldState(5,5),GridWorldState(3,5)],
+                tp = 0.8,
+                terminals = [GridWorldState(3,3),GridWorldState(3,1),GridWorldState(5,5),GridWorldState(3,5)],
                 )
 initial_state = GridWorldState(1,1)
 
