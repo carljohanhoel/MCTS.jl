@@ -22,7 +22,7 @@ mdp = GridWorld(5,5,
                 tp = 0.8,
                 terminals = [GridWorldState(3,3),GridWorldState(3,1),GridWorldState(5,5),GridWorldState(3,5)],
                 )
-state = GridWorldState(3,4)
+state = GridWorldState(5,5)
 
 
 n_s = length(MCTS.convert_state(state))
@@ -32,8 +32,7 @@ estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/nn_estimator"
 log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS")
 estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a)
 
-# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/SavedNetwork_180528_203048_10000")
-
+load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180530_022108/50001")
 
 solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=ec,
                 k_state=3.,

@@ -18,14 +18,14 @@ estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/nn_estimator"
 log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS")
 estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a)
 
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180530_022108/50001")
 
-allowed_actions = [true true false true]
-allowed_actions = [1.0, 1.0, 0.0, 1.0]
+allowed_actions = [1.0, 1.0, 1.0, 1.0]
 
 v = estimator.py_class[:estimate_value](vec_state)
 p = estimator.py_class[:estimate_distribution](vec_state, allowed_actions)
-print(v)
-print(p)
+println(v)
+println(p)
 
 estimator.py_class[:debug_save_input](vec_state, allowed_actions)
 estimator.py_class[:debug_print_n_calls]()

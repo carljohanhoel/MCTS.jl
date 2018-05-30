@@ -23,13 +23,15 @@ mdp = GridWorld(5,5,
                 tp = 0.8,
                 terminals = [GridWorldState(3,3),GridWorldState(3,1),GridWorldState(5,5),GridWorldState(3,5)],
                 )
-initial_state = GridWorldState(1,1)
+initial_state = GridWorldState(4,4)
 
 n_s = length(MCTS.convert_state(initial_state))
 n_a = n_actions(mdp)
 estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/nn_estimator"
 log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS")
 estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a)
+
+load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180530_022108/50001")
 
 solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=c_puct,
                k_state=3.,
@@ -57,14 +59,14 @@ step = 1
 print(hist.action_hist[step])
 inchromium(D3Tree(hist.ainfo_hist[step][:tree],init_expand=1))
 
-
 #Extract training samples
-new_states = hist.state_hist
+n_a = length(actions(mdp))
+new_states = deepcopy(hist.state_hist)
 new_values = Vector{Float64}(length(new_states))
-new_distributions = Array{Float64}(length(new_states)-1,length(actions(mdp)))
+new_distributions = Array{Float64}(length(new_states),n_a)
 
 end_state = new_states[end]
-end_value = end_state.done ? 0 : estimate_value(solver.estimate_value, end_state)
+end_value = isterminal(mdp,end_state) ? 0 : estimate_value(solver.estimate_value, end_state)
 new_values[end] = end_value
 value = end_value
 for (i,state) in enumerate(new_states[end-1:-1:1])
@@ -74,10 +76,19 @@ for (i,state) in enumerate(new_states[end-1:-1:1])
    new_distributions[i,:] = hist.ainfo_hist[i][:action_distribution]
 end
 
+if isterminal(mdp,end_state) #If terminal state, keep value 0 and add dummy distribution, otherwise remove last sample
+   new_distributions[end,:] = ones(1,n_a)/n_a
+else
+   pop!(new_states)
+   pop!(new_values)
+   new_distributions = new_distributions[1:end-1,:]
+end
+
+
 ##
 #Update
 println("Update network")
-update_network(solver.estimate_value, new_states[1:end-1], new_distributions, new_values[1:end-1])
+update_network(solver.estimate_value, new_states, new_distributions, new_values)
 
 ##
 vec_state =  MCTS.convert_state(initial_state)

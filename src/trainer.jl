@@ -50,19 +50,28 @@ function train{S,A}(trainer::Trainer,
         hist = POMDPs.simulate(sim, mdp, policy, s_initial)
 
         #Extract training samples
+        n_a = length(actions(mdp))
         n_new_samples = length(hist.state_hist)
-        new_states = hist.state_hist
+        new_states = deepcopy(hist.state_hist)
         new_values = Vector{Float64}(length(new_states))
-        new_distributions = Array{Float64}(length(new_states)-1,length(actions(mdp)))
+        new_distributions = Array{Float64}(length(new_states),n_a)
 
         end_state = new_states[end]
-        end_value = end_state.done ? 0 : estimate_value(policy.solver.estimate_value, end_state)
+        end_value = isterminal(mdp,end_state) ? 0 : estimate_value(policy.solver.estimate_value, end_state)
         new_values[end] = end_value
         value = end_value
         for (i,state) in enumerate(new_states[end-1:-1:1])
            value = hist.reward_hist[end+1-i] + mdp.discount_factor*value
            new_values[end-i] = value
            new_distributions[i,:] = hist.ainfo_hist[i][:action_distribution]
+        end
+
+        if isterminal(mdp,end_state) #If terminal state, keep value 0 and add dummy distribution, otherwise remove last sample (the simulation gives no information about it)
+           new_distributions[end,:] = ones(1,n_a)/n_a
+        else
+           pop!(new_states)
+           pop!(new_values)
+           new_distributions = new_distributions[1:end-1,:]
         end
 
         #Update network
