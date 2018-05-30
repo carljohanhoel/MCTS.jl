@@ -27,10 +27,11 @@ state = GridWorldState(1,1)
 
 n_s = length(MCTS.convert_state(state))
 n_a = n_actions(mdp)
-
+replay_memory_max_size = 55
+training_start = 40
 estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/nn_estimator"
 log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS")
-estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a)
+estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, replay_memory_max_size, training_start)
 
 load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180530_022108/50001")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180530_200610/10001")
