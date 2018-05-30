@@ -68,7 +68,7 @@ function convert_state(state::GridWorldState)
     converted_state = Array{Float64}(1,3)
     converted_state[1] = state.x
     converted_state[2] = state.y
-    converted_state[3] = state.done
+    converted_state[3] = state.done ? 1 : 0
     return converted_state
 end
 

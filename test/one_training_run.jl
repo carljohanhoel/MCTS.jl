@@ -46,6 +46,6 @@ policy = solve(solver, mdp)
 sim = HistoryRecorder(rng=rng, max_steps=20, show_progress=false)
 
 ##
-# trainer = Trainer(rng=rng, training_steps=100, save_freq=20, eval_freq=20, eval_eps=3, show_progress=true, log_dir=log_path)
-trainer = Trainer(rng=rng, training_steps=100000, save_freq=5000, eval_freq=5000, eval_eps=100, show_progress=true, log_dir=log_path)
+trainer = Trainer(rng=rng, training_steps=100, save_freq=20, eval_freq=20, eval_eps=3, show_progress=true, log_dir=log_path)
+# trainer = Trainer(rng=rng, training_steps=100000, save_freq=5000, eval_freq=5000, eval_eps=100, show_progress=true, log_dir=log_path)
 train(trainer, sim, mdp, policy)

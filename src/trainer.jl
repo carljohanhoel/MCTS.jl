@@ -72,10 +72,11 @@ function train{S,A}(trainer::Trainer,
            pop!(new_states)
            pop!(new_values)
            new_distributions = new_distributions[1:end-1,:]
+           n_new_samples-=1
         end
 
         #Update network
-        update_network(policy.solver.estimate_value, new_states[1:end-1], new_distributions, new_values[1:end-1])
+        update_network(policy.solver.estimate_value, new_states, new_distributions, new_values)
 
         step += n_new_samples
 

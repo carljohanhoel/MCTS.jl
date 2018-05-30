@@ -19,6 +19,7 @@ log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.n
 estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a)
 
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180530_022108/50001")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180530_200610/10001")
 
 allowed_actions = [1.0, 1.0, 1.0, 1.0]
 
