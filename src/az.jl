@@ -131,6 +131,18 @@ function simulate(az::AZPlanner, snode::Int)
         end
 
         p0_vec = init_P(sol.init_P, az.mdp, s, allowed_actions_vec)
+        if snode == 1   #Add Dirichlet noise to the root node
+            distr = Dirichlet(length(allowed_actions),az.solver.noise_dirichlet)
+            noise = rand(distr)   #ZZZ Warning, RNG does not work with Dirichlet, so does not help to give reproducible results
+            j = 1
+            for i in 1:length(p0_vec)
+                if allowed_actions_vec[i] == 1.0
+                    p0_vec[i] = (1-az.solver.noise_eps)*p0_vec[i] + az.solver.noise_eps*noise[j]
+                    j += 1
+                end
+            end
+        end
+
         for (i,a) in enumerate(all_actions)   #Loop through all actions, even the forbidden ones, but set their probabilities to 0
             n0 = init_N(sol.init_N, az.mdp, s, a)   #sol.initN set to 0
             p0 = p0_vec[i]

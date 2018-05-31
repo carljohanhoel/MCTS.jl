@@ -44,7 +44,9 @@ solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=c_puct,
                check_repeat_state=false,
                rng=rng,
                estimate_value=estimator,
-               init_P=estimator
+               init_P=estimator,
+               noise_dirichlet = 4,
+               noise_eps = 0.25
                )
 policy = solve(solver, mdp)
 

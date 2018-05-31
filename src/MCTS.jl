@@ -5,6 +5,7 @@ using POMDPs
 using POMDPToolbox
 
 using PyCall
+using Distributions
 using StatsBase
 
 using Compat

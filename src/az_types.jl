@@ -103,6 +103,8 @@ mutable struct AZSolver <: AbstractMCTSSolver
     init_Q::Any
     init_N::Any
     init_P::Any
+    noise_dirichlet::Float64
+    noise_eps::Float64
     next_action::Any
     default_action::Any
 end
@@ -131,10 +133,12 @@ function AZSolver(;depth::Int=10,
                     init_Q::Any = 0.0,
                     init_N::Any = 0,
                     init_P::Any = "uniform",   #Standard gives uniform probability
+                    noise_dirichlet = 4,
+                    noise_eps = 0,   #0 means noise is not used
                     next_action::Any = RandomActionGenerator(rng),
                     default_action::Any = ExceptionRethrow()
                    )
-    AZSolver(depth, exploration_constant, n_iterations, max_time, k_action, alpha_action, k_state, alpha_state, tau, keep_tree, enable_action_pw, check_repeat_state, check_repeat_action, tree_in_info, rng, estimate_value, init_Q, init_N, init_P, next_action, default_action)
+    AZSolver(depth, exploration_constant, n_iterations, max_time, k_action, alpha_action, k_state, alpha_state, tau, keep_tree, enable_action_pw, check_repeat_state, check_repeat_action, tree_in_info, rng, estimate_value, init_Q, init_N, init_P, noise_dirichlet, noise_eps, next_action, default_action)
 end
 
 #=

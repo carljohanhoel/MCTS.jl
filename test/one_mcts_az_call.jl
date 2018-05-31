@@ -46,7 +46,9 @@ solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=ec,
                 check_repeat_state=false,
                 rng=rng,
                 estimate_value=estimator,
-                init_P=estimator
+                init_P=estimator,
+                noise_dirichlet = 4,
+                noise_eps = 0.25
                 )
 
 
@@ -55,6 +57,7 @@ policy = solve(solver, mdp)
 a, ai = action_info(policy, state)
 inchromium(D3Tree(ai[:tree],init_expand=1))
 
+estimator.py_class[:debug_print_n_calls]()
 ##
 #DPW reference
 
@@ -70,7 +73,4 @@ solver_dpw = DPWSolver(n_iterations=n_iter, depth=depth, exploration_constant=ec
 policy_dpw = solve(solver_dpw, mdp)
 
 a_dpw, ai_dpw = action_info(policy_dpw, state)
-
-estimator.py_class[:debug_print_n_calls]()
-
 inchromium(D3Tree(ai_dpw[:tree],init_expand=1))
