@@ -91,6 +91,7 @@ function train{S,A}(trainer::Trainer,
         if div(step,trainer.eval_freq) > n_evals
             eval_eps = 1
             policy.training_phase=false
+            s_initial = GridWorldState(5,1)   #ZZZZZZZZZZZZZ Fix, generalize
             episode_reward = []
             while eval_eps <= trainer.eval_eps
                 hist = POMDPs.simulate(sim, mdp, policy, s_initial)
