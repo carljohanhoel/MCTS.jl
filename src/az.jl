@@ -131,7 +131,7 @@ function simulate(az::AZPlanner, snode::Int)
         end
 
         p0_vec = init_P(sol.init_P, az.mdp, s, allowed_actions_vec)
-        if snode == 1   #Add Dirichlet noise to the root node
+        if snode == 1 && az.training_phase   #Add Dirichlet noise to the root node
             distr = Dirichlet(length(allowed_actions),az.solver.noise_dirichlet)
             noise = rand(distr)   #ZZZ Warning, RNG does not work with Dirichlet, so does not help to give reproducible results
             j = 1

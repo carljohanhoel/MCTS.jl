@@ -13,18 +13,18 @@ n_iter = 1000
 depth = 15
 c_puct = 10.0
 
-# replay_memory_max_size = 55
-# training_start = 40
-# training_steps = 100
-# save_freq = 20
-# eval_freq = 20
-# eval_eps = 3
-replay_memory_max_size = 100000
-training_start = 5000
-training_steps = 100000
-save_freq = 5000
-eval_freq = 5000
-eval_eps = 100
+replay_memory_max_size = 55
+training_start = 40
+training_steps = 100
+save_freq = 20
+eval_freq = 20
+eval_eps = 3
+# replay_memory_max_size = 100000
+# training_start = 5000
+# training_steps = 100000
+# save_freq = 5000
+# eval_freq = 5000
+# eval_eps = 100
 
 
 sim_max_steps = 25
@@ -44,7 +44,7 @@ s_initial = GridWorldState(1,1)
 n_s = length(MCTS.convert_state(s_initial))
 n_a = n_actions(mdp)
 estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/nn_estimator"
-log_name = ARGS[1]
+log_name = length(ARGS)>0 ? ARGS[1] : ""
 log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS_")*log_name
 estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, replay_memory_max_size, training_start)
 
@@ -61,7 +61,6 @@ solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=c_puct,
                noise_eps = 0.25
                )
 policy = solve(solver, mdp)
-
 
 sim = HistoryRecorder(rng=rng, max_steps=sim_max_steps, show_progress=false)
 
