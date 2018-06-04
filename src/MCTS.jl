@@ -38,7 +38,7 @@ export
     estimate_value,
     estimate_distribution,
     update_network,
-    load_network,
+    terminate_estimator,
     init_N,
     init_Q,
     children,

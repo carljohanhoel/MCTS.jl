@@ -46,11 +46,7 @@ n_a = n_actions(mdp)
 estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/nn_estimator"
 log_name = length(ARGS)>0 ? ARGS[1] : ""
 log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS_")*log_name
-
-load_network = ""
-# load_network = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180601_010824_dirichlet_noise_added/70012"
-
-estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, replay_memory_max_size, training_start, load_network=load_network)
+estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, replay_memory_max_size, training_start)
 
 solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=c_puct,
                k_state=3.,
@@ -70,18 +66,4 @@ sim = HistoryRecorder(rng=rng, max_steps=sim_max_steps, show_progress=false)
 
 ##
 trainer = Trainer(rng=rng, training_steps=training_steps, save_freq=save_freq, eval_freq=eval_freq, eval_eps=eval_eps, show_progress=true, log_dir=log_path)
-# train(trainer, sim, mdp, policy)
-
-##
-s_initial = initial_state(mdp,trainer.rng)
-hist = POMDPs.simulate(sim, mdp, policy, s_initial)
-##
-
-sleep(5)
-
-new_states = deepcopy(hist.state_hist)
-new_values = ones(length(new_states))
-new_distributions = ones(length(new_states),4)
-update_network(policy.solver.estimate_value, new_states, new_distributions, new_values)
-
-print("t")
+train(trainer, sim, mdp, policy)

@@ -8,15 +8,15 @@ mutable struct NNEstimator
     estimator_path::String
 end
 
-function NNEstimator(rng::AbstractRNG, estimator_path::String, log_path::String, n_states::Int, n_actions::Int, replay_memory_max_size::Int, training_start::Int) #
-    py_class = initialize_estimator(estimator_path, log_path, n_states, n_actions, replay_memory_max_size, training_start)
+function NNEstimator(rng::AbstractRNG, estimator_path::String, log_path::String, n_states::Int, n_actions::Int, replay_memory_max_size::Int, training_start::Int; load_network::String="") #
+    py_class = initialize_estimator(estimator_path, log_path, n_states, n_actions, replay_memory_max_size, training_start, load_network)
     return NNEstimator(rng, py_class, estimator_path)
 end
 
-function initialize_estimator(estimator_path::String, log_path::String, n_states::Int, n_actions::Int, replay_memory_max_size::Int, training_start::Int)
+function initialize_estimator(estimator_path::String, log_path::String, n_states::Int, n_actions::Int, replay_memory_max_size::Int, training_start::Int, load_network::String )
     unshift!(PyVector(pyimport("sys")["path"]), dirname(estimator_path))
     eval(parse(string("@pyimport ", basename(estimator_path), " as python_module")))
-    py_class = python_module.NNEstimator(n_states, n_actions, replay_memory_max_size, training_start, log_path)
+    py_class = python_module.NNEstimator(n_states, n_actions, replay_memory_max_size, training_start, log_path, load_network=="" ? nothing : load_network)
     return py_class
 end
 
@@ -44,9 +44,14 @@ function save_network(estimator::NNEstimator, name::String)
     estimator.py_class[:save_network](name)
 end
 
-function load_network(estimator::NNEstimator, name::String)
-    estimator.py_class[:load_network](name)
+function terminate_estimator(estimator::NNEstimator)
+    estimator.py_class[:terminate]()
 end
+
+# Not used anymore
+# function load_network(estimator::NNEstimator, name::String)
+#     estimator.py_class[:load_network](name)
+# end
 
 #Needs to be defined for each problem to fit the input of the nerual network
 function convert_state(state::Type)

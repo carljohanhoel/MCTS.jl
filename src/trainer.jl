@@ -75,8 +75,11 @@ function train{S,A}(trainer::Trainer,
            n_new_samples-=1
         end
 
-        #Update network
-        update_network(policy.solver.estimate_value, new_states, new_distributions, new_values)
+        #Update network   - ZZZZZZZZZZZZZZZ Add option to run several times after every episode
+        println("Update network")
+        for i in 1:10
+            update_network(policy.solver.estimate_value, new_states, new_distributions, new_values)
+        end
 
         step += n_new_samples
 
@@ -84,6 +87,8 @@ function train{S,A}(trainer::Trainer,
         if div(step,trainer.save_freq) > n_saves
         # if step%trainer.save_freq == 0
             filename = trainer.log_dir*"/"*string(step)
+            println("Saving")
+            println(filename)
             save_network(policy.solver.estimate_value, filename)
             n_saves+=1
         end

@@ -19,9 +19,6 @@ estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/nn_estimator"
 log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS")
 estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, replay_memory_max_size, training_start)
 
-# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180530_022108/50001")
-# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180530_200610/10001")
-
 allowed_actions = [1.0, 1.0, 1.0, 1.0]
 
 v = estimator.py_class[:estimate_value](vec_state)
@@ -34,4 +31,16 @@ estimator.py_class[:debug_print_n_calls]()
 
 estimator.py_class[:save_network](dirname(dirname(estimator_path))*"/Logs/ttt")
 
-estimator.py_class[:load_network](dirname(dirname(estimator_path))*"/Logs/ttt")
+# Not used anymore, call with saved network when starting instead
+# estimator.py_class[:load_network](dirname(dirname(estimator_path))*"/Logs/ttt")
+
+sleep(5)
+terminate_estimator(estimator)
+
+
+#Test load
+load_network = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/ttt"
+estimator2 = NNEstimator(rng, estimator_path, log_path, n_s, n_a, replay_memory_max_size, training_start, load_network=load_network)
+
+sleep(5)
+terminate_estimator(estimator2)

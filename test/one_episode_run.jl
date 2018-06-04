@@ -31,10 +31,11 @@ replay_memory_max_size = 55
 training_start = 40
 estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/nn_estimator"
 log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS")
-estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, replay_memory_max_size, training_start)
 
-# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180530_022108/50001")
-load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180531_025035/45001")
+# load_network = ""
+load_network = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180601_010824_dirichlet_noise_added/70012"
+
+estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, replay_memory_max_size, training_start, load_network=load_network)
 
 solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=c_puct,
                k_state=3.,
@@ -91,9 +92,9 @@ end
 
 
 ##
-# #Update
-# println("Update network")
-# update_network(solver.estimate_value, new_states, new_distributions, new_values)
+#Update
+println("Update network")
+update_network(solver.estimate_value, new_states, new_distributions, new_values)
 
 ##
 vec_state =  MCTS.convert_state(initial_state)
