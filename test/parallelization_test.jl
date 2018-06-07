@@ -9,7 +9,8 @@ using D3Trees
 
 ##
 
-n_iter = 1000
+# n_iter = 1000
+n_iter = 20 #ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
 depth = 15
 c_puct = 10.0
 
@@ -62,8 +63,32 @@ solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=c_puct,
                )
 policy = solve(solver, mdp)
 
+mdp2 = deepcopy(mdp)
+solver2 = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=c_puct,
+               k_state=3.,
+               tree_in_info=true,
+               alpha_state=0.2,
+               enable_action_pw=false,
+               check_repeat_state=false,
+               rng=rng,
+               estimate_value=estimator,
+               init_P=estimator,
+               noise_dirichlet = 4,
+               noise_eps = 0.25
+               )
+policy2 = solve(solver2, mdp2)
+
 sim = HistoryRecorder(rng=rng, max_steps=sim_max_steps, show_progress=false)
 
 ##
 trainer = Trainer(rng=rng, training_steps=training_steps, save_freq=save_freq, eval_freq=eval_freq, eval_eps=eval_eps, show_progress=true, log_dir=log_path)
-train(trainer, sim, mdp, policy)
+# train(trainer, sim, mdp, policy)
+
+n_processes = 1
+# @enter train_parallel(trainer, sim, mdp, policy, n_processes)
+# train_parallel(trainer, sim, mdp, policy, n_processes, policy2, mdp2)
+
+# remotecall_fetch(train, 1, trainer, sim, mdp, policy)
+
+# addprocs(1)
+rr = remotecall(train, 1, trainer, sim, mdp, policy)

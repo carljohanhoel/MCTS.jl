@@ -46,6 +46,7 @@ export
     isroot,
     default_action,
     train,
+    train_parallel,
     convert_state
 
 export

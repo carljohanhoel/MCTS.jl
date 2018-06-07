@@ -31,16 +31,31 @@ estimator.py_class[:debug_print_n_calls]()
 
 estimator.py_class[:save_network](dirname(dirname(estimator_path))*"/Logs/ttt")
 
-# Not used anymore, call with saved network when starting instead
-# estimator.py_class[:load_network](dirname(dirname(estimator_path))*"/Logs/ttt")
-##
-sleep(5)
-terminate_estimator(estimator)
+new_states = Vector{GridWorldState}(5)
+for i in 1:length(new_states)
+   new_states[i] = GridWorldState(5,1)
+end
+new_values = ones(5)
+new_distributions = ones(5,4)
 
 ##
-#Test load
-load_network = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/ttt"
-estimator2 = NNEstimator(rng, estimator_path, log_path, n_s, n_a, replay_memory_max_size, training_start, load_network=load_network)
+#Update
+println("Update network")
 
-sleep(5)
-terminate_estimator(estimator2)
+converted_states = convert_state(new_states)
+
+for i in 1:1000
+   # tic()
+   # print("Call no ")
+   # println(i)
+   estimator.py_class[:update_network](converted_states, new_distributions, new_values)
+   # update_network(estimator, new_states, new_distributions, new_values)
+   # toc()
+end
+update_network(estimator, new_states, new_distributions, new_values)
+#
+estimator.py_class[:estimate_value](vec_state)
+# sleep(5)
+# terminate_estimator(estimator)
+
+estimator.py_class[:debug_print_n_calls]()

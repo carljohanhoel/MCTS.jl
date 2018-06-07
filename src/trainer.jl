@@ -16,6 +16,7 @@ mutable struct Trainer
     eval_eps::Int
     show_progress::Bool
     log_dir::String
+    process_id::Int
 end
 
 function Trainer(;rng=MersenneTwister(rand(UInt32)),
@@ -24,9 +25,10 @@ function Trainer(;rng=MersenneTwister(rand(UInt32)),
                   eval_freq::Int=Inf,
                   eval_eps::Int=1,
                   show_progress=false,
-                  log_dir::String="./"
+                  log_dir::String="./",
+                  process_id::Int=1
                  )
-    return Trainer(rng, training_steps, save_freq, eval_freq, eval_eps, show_progress, log_dir)
+    return Trainer(rng, training_steps, save_freq, eval_freq, eval_eps, show_progress, log_dir, process_id)
 end
 
 
@@ -34,6 +36,9 @@ function train{S,A}(trainer::Trainer,
                     sim::HistoryRecorder,
                     mdp::MDP{S,A}, policy::Policy
                    )
+    @printf("Start training with process %d \n", trainer.process_id)
+    policy.solver.estimate_value.py_class[:net][:ri] = trainer.process_id
+
     training_steps = trainer.training_steps
     if trainer.show_progress
         prog = POMDPToolbox.Progress(training_steps, "Training..." )
@@ -76,7 +81,7 @@ function train{S,A}(trainer::Trainer,
         end
 
         #Update network   - ZZZZZZZZZZZZZZZ Add option to run several times after every episode
-        println("Update network")
+        # println("Update network")
         for i in 1:10
             update_network(policy.solver.estimate_value, new_states, new_distributions, new_values)
         end
@@ -87,8 +92,8 @@ function train{S,A}(trainer::Trainer,
         if div(step,trainer.save_freq) > n_saves
         # if step%trainer.save_freq == 0
             filename = trainer.log_dir*"/"*string(step)
-            println("Saving")
-            println(filename)
+            # println("Saving")
+            # println(filename)
             save_network(policy.solver.estimate_value, filename)
             n_saves+=1
         end
@@ -118,4 +123,97 @@ function train{S,A}(trainer::Trainer,
     if sim.show_progress
         POMDPToolbox.ProgressMeter.finish!(prog)
     end
+end
+
+
+
+
+#Parallelization of training
+function train_parallel(trainer::Trainer,
+                        sim::HistoryRecorder,
+                        mdp::MDP,
+                        policy::Policy,
+                        n_processes::Int,
+                        policy2::Policy,
+                        mdp2::MDP
+                        )
+    #=
+    frame_lines = pmap(progress, queue) do sim
+        result = simulate(sim)
+        return process(sim, result)
+    end
+    =#
+
+    np = nprocs()
+    addprocs(max(n_processes-np,0))
+    if n_processes == 1
+        warn("""
+             run_parallel(...) was started with only 1 process.
+             """)
+    end
+
+
+    #ZZZ Create copies of trainer
+    trainer_vec = []
+    sim_vec = []
+    mdp_vec = []
+    policy_vec = []
+    # for i=1:n_processes
+    #     push!(trainer_vec,deepcopy(trainer))
+    #     push!(sim_vec,deepcopy(sim))
+    #     push!(mdp_vec,deepcopy(mdp))
+    #     push!(policy_vec,policy)
+    # end
+    # for i=2:n_processes
+    #     #Set same NN estimator
+    #     # policy_vec[i].solver.estimate_value = policy_vec[1].solver.estimate_value
+    #
+    #     #Change RNGs
+    #     rng = MersenneTwister(i+rand(trainer.rng,1:1000000))
+    #     policy_vec[i].solver.rng = rng
+    #     sim_vec[i].rng = rng
+    #     trainer_vec[i].rng = rng
+    #
+    #     #Set process id
+    #     trainer_vec[i].process_id = i
+    #
+    #     #Remove saving
+    #     trainer_vec[i].save_freq = typemax(Int)
+    # end
+
+    push!(trainer_vec, trainer)
+    push!(trainer_vec, deepcopy(trainer))
+    push!(sim_vec, sim)
+    push!(sim_vec, deepcopy(sim))
+    push!(mdp_vec, mdp)
+    push!(mdp_vec, mdp2)
+    push!(policy_vec, policy)
+    push!(policy_vec, policy2)
+
+
+    # policy.solver.estimate_value.py_class[:net][:stash_size](n_processes) #ZZZZZZZZZZZ This should be included
+
+    i = 1
+    prog = 0
+    # based on the simple implementation of pmap here: https://docs.julialang.org/en/latest/manual/parallel-computing
+    nextidx() = (idx=i; i+=1; idx)
+    prog_lock = ReentrantLock()
+    @sync begin
+        for p in 1:n_processes
+            if np == 1 || p != myid()
+                @async begin
+                    while true
+                        idx = nextidx()
+                        if idx > n_processes
+                            break
+                        end
+                        #ZZZ Set up process id to python code
+                        remotecall_fetch(train, p, trainer_vec[idx], sim_vec[idx], mdp_vec[idx], policy_vec[idx])
+
+                    end
+                end
+            end
+        end
+    end
+    # print(frame_lines)
 end

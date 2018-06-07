@@ -23,7 +23,7 @@ mdp = GridWorld(5,5,
                 tp = 0.8,
                 terminals = [GridWorldState(3,3),GridWorldState(5,3),GridWorldState(5,5),GridWorldState(1,1)],
                 )
-initial_state = GridWorldState(5,1)
+initial_state = GridWorldState(1,1)
 
 n_s = length(MCTS.convert_state(initial_state))
 n_a = n_actions(mdp)
