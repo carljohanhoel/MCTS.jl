@@ -173,15 +173,13 @@ function simulate(az::AZPlanner, snode::Int)
     end
     if sanode == 0 #debug........
         JLD.save("/home/cj/2018/Stanford/Code/Multilane.jl/Logs/dbg.jld", "s", s, "allowed_actions_vec", allowed_actions_vec)
-
-        warn("No allowed actions")
+        warn("No child node chosen")
         println(isempty(tree.children[snode]))
         println(allowed_actions)
         println(allowed_actions_vec)
         println(p0_vec)
         println(s)
         println(az.training_phase)
-        println(distr)
         sanode = tree.children[snode][1] #Just pick one to keep running
     end
 
