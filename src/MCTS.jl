@@ -7,6 +7,7 @@ using POMDPToolbox
 using PyCall
 using Distributions
 using StatsBase
+using JLD   #ZZZZ tmp, onl for debuggin, remove
 
 using Compat
 using Blink
@@ -37,6 +38,7 @@ export
     clear_tree!,
     estimate_value,
     estimate_distribution,
+    add_samples_to_memory,
     update_network,
     load_network,
     init_N,
@@ -46,7 +48,8 @@ export
     isroot,
     default_action,
     train,
-    convert_state
+    convert_state,
+    initial_eval_state
 
 export
     AbstractStateNode,

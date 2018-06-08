@@ -35,9 +35,13 @@ function estimate_distribution(estimator::NNEstimator, state, allowed_actions)
     return dist
 end
 
-function update_network(estimator::NNEstimator, states, dists, vals)
+function add_samples_to_memory(estimator::NNEstimator, states, dists, vals)
     converted_states = convert_state(states)
-    estimator.py_class[:update_network](converted_states, dists, vals)
+    estimator.py_class[:add_samples_to_memory](converted_states, dists, vals)
+end
+
+function update_network(estimator::NNEstimator)
+    estimator.py_class[:update_network]()
 end
 
 function save_network(estimator::NNEstimator, name::String)

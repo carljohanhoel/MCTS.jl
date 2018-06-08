@@ -157,17 +157,32 @@ function simulate(az::AZPlanner, snode::Int)
     sanode = 0
     tn = tree.total_n[snode]
     for child in shuffle(az.rng,tree.children[snode])   #Randomize in case of equal UCB values
-        n = tree.n[child]
-        q = tree.q[child]
-        p = tree.p[child]
-        c_puct = sol.exploration_constant # for clarity
-        UCB = q + c_puct*p*sqrt(tn)/(1+n)
-        @assert !isnan(UCB) "UCB was NaN (q=$q, c=$c, ltn=$ltn, n=$n)"
-        @assert !isequal(UCB, -Inf)
-        if UCB > best_UCB
-            best_UCB = UCB
-            sanode = child
+        if tree.p[child] > 0.0   #Prior probability ==0.0 means it's a forbidden action
+            n = tree.n[child]
+            q = tree.q[child]
+            p = tree.p[child]
+            c_puct = sol.exploration_constant # for clarity
+            UCB = q + c_puct*p*sqrt(tn)/(1+n)
+            @assert !isnan(UCB) "UCB was NaN (q=$q, c=$c, ltn=$ltn, n=$n)"
+            @assert !isequal(UCB, -Inf)
+            if UCB > best_UCB
+                best_UCB = UCB
+                sanode = child
+            end
         end
+    end
+    if sanode == 0 #debug........
+        JLD.save("/home/cj/2018/Stanford/Code/Multilane.jl/Logs/dbg.jld", "s", s, "allowed_actions_vec", allowed_actions_vec)
+
+        warn("No allowed actions")
+        println(isempty(tree.children[snode]))
+        println(allowed_actions)
+        println(allowed_actions_vec)
+        println(p0_vec)
+        println(s)
+        println(az.training_phase)
+        println(distr)
+        sanode = tree.children[snode][1] #Just pick one to keep running
     end
 
     a = tree.a_labels[sanode]

@@ -61,7 +61,7 @@ function train{S,A}(trainer::Trainer,
         new_values[end] = end_value
         value = end_value
         for (i,state) in enumerate(new_states[end-1:-1:1])
-           value = hist.reward_hist[end+1-i] + mdp.discount_factor*value
+           value = hist.reward_hist[end+1-i] + mdp.discount*value
            new_values[end-i] = value
            new_distributions[i,:] = hist.ainfo_hist[i][:action_distribution]
         end
@@ -75,8 +75,12 @@ function train{S,A}(trainer::Trainer,
            n_new_samples-=1
         end
 
-        #Update network
-        update_network(policy.solver.estimate_value, new_states, new_distributions, new_values)
+        #Update network   - ZZZZZZZZZZZZZZZ Add option to run several times after every episode
+        # println("Update network")
+        add_samples_to_memory(policy.solver.estimate_value, new_states, new_distributions, new_values)
+        for i in 1:10
+            update_network(policy.solver.estimate_value)
+        end
 
         step += n_new_samples
 
@@ -91,7 +95,7 @@ function train{S,A}(trainer::Trainer,
         if div(step,trainer.eval_freq) > n_evals
             eval_eps = 1
             policy.training_phase=false
-            s_initial = GridWorldState(5,1)   #ZZZZZZZZZZZZZ Fix, generalize
+            s_initial = initial_eval_state(mdp, trainer.rng)
             episode_reward = []
             while eval_eps <= trainer.eval_eps
                 hist = POMDPs.simulate(sim, mdp, policy, s_initial)
