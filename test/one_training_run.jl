@@ -25,6 +25,19 @@ eval_eps = 3
 # save_freq = 5000
 # eval_freq = 5000
 # eval_eps = 100
+# replay_memory_max_size = 100000
+# training_start = 10000
+# training_steps = 1000000
+# save_freq = 10000
+# eval_freq = 10000
+# eval_eps = 100
+# replay_memory_max_size = 10000
+# training_start = 5000
+# training_steps = 100000
+# save_freq = 5000
+# eval_freq = 5000
+# eval_eps = 100
+
 
 
 sim_max_steps = 25
@@ -41,7 +54,7 @@ mdp = GridWorld(5,5,
                 )
 s_initial = GridWorldState(1,1)
 
-n_s = length(MCTS.convert_state(s_initial))
+n_s = length(MCTS.convert_state(s_initial, mdp))
 n_a = n_actions(mdp)
 estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/nn_estimator"
 log_name = length(ARGS)>0 ? ARGS[1] : ""

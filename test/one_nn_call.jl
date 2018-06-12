@@ -8,7 +8,7 @@ mdp = GridWorld(5,5,
                 )
 state = GridWorldState(1,1)
 
-vec_state = MCTS.convert_state(state)
+vec_state = MCTS.convert_state(state, mdp)
 
 n_s = length(vec_state)
 n_a = n_actions(mdp)

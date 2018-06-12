@@ -57,7 +57,7 @@ function train{S,A}(trainer::Trainer,
         new_distributions = Array{Float64}(length(new_states),n_a)
 
         end_state = new_states[end]
-        end_value = isterminal(mdp,end_state) ? 0 : estimate_value(policy.solver.estimate_value, end_state)
+        end_value = isterminal(mdp,end_state) ? 0 : estimate_value(policy.solver.estimate_value, end_state, mdp)
         new_values[end] = end_value
         value = end_value
         for (i,state) in enumerate(new_states[end-1:-1:1])
@@ -77,7 +77,7 @@ function train{S,A}(trainer::Trainer,
 
         #Update network   - ZZZZZZZZZZZZZZZ Add option to run several times after every episode
         # println("Update network")
-        add_samples_to_memory(policy.solver.estimate_value, new_states, new_distributions, new_values)
+        add_samples_to_memory(policy.solver.estimate_value, new_states, new_distributions, new_values, mdp)
         for i in 1:10
             update_network(policy.solver.estimate_value)
         end

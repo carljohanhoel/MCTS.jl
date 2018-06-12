@@ -21,22 +21,22 @@ function initialize_estimator(estimator_path::String, log_path::String, n_states
 end
 
 
-estimate_value(estimator::NNEstimator, mdp::MDP, state, depth::Int) = estimate_value(estimator, state)
+estimate_value(estimator::NNEstimator, mdp::MDP, state, depth::Int) = estimate_value(estimator, state, mdp)
 
-function estimate_value(estimator::NNEstimator, state)
-    converted_state = convert_state(state)
+function estimate_value(estimator::NNEstimator, state, mdp::MDP)
+    converted_state = convert_state(state, mdp)
     value = estimator.py_class[:estimate_value](converted_state)
     return value
 end
 
-function estimate_distribution(estimator::NNEstimator, state, allowed_actions)
-    converted_state = convert_state(state)
+function estimate_distribution(estimator::NNEstimator, state, allowed_actions, mdp)
+    converted_state = convert_state(state, mdp)
     dist = estimator.py_class[:estimate_distribution](converted_state,allowed_actions)
     return dist
 end
 
-function add_samples_to_memory(estimator::NNEstimator, states, dists, vals)
-    converted_states = convert_state(states)
+function add_samples_to_memory(estimator::NNEstimator, states, dists, vals, mdp)
+    converted_states = convert_state(states, mdp)
     estimator.py_class[:add_samples_to_memory](converted_states, dists, vals)
 end
 
@@ -53,22 +53,22 @@ function load_network(estimator::NNEstimator, name::String)
 end
 
 #Needs to be defined for each problem to fit the input of the nerual network
-function convert_state(state::Type)
+function convert_state(state::Type, mdp::MDP)
     converted_state = state
     return converted_state
 end
 
 #Simple example for GridWorld, here for tests. Remove later.
 using POMDPModels
-function convert_state(state::Vector{GridWorldState})
+function convert_state(state::Vector{GridWorldState}, mdp::GridWorld)
     n = length(state)
     converted_state = Array{Float64}(n,3)
     for i in 1:n
-        converted_state[i,:] = convert_state(state[i])
+        converted_state[i,:] = convert_state(state[i], mdp)
     end
     return converted_state
 end
-function convert_state(state::GridWorldState)
+function convert_state(state::GridWorldState, mdp::GridWorld)
     converted_state = Array{Float64}(1,3)
     converted_state[1] = state.x
     converted_state[2] = state.y

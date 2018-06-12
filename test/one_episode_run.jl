@@ -25,7 +25,7 @@ mdp = GridWorld(5,5,
                 )
 initial_state = GridWorldState(5,1)
 
-n_s = length(MCTS.convert_state(initial_state))
+n_s = length(MCTS.convert_state(initial_state, mdp))
 n_a = n_actions(mdp)
 replay_memory_max_size = 55
 training_start = 40
@@ -76,7 +76,7 @@ new_values[end] = end_value
 value = end_value
 for (i,state) in enumerate(new_states[end-1:-1:1])
    # print(state)
-   value = hist.reward_hist[end+1-i] + mdp.discount_factor*value
+   value = hist.reward_hist[end+1-i] + mdp.discount*value
    new_values[end-i] = value
    new_distributions[i,:] = hist.ainfo_hist[i][:action_distribution]
 end
@@ -96,7 +96,7 @@ end
 # update_network(solver.estimate_value, new_states, new_distributions, new_values)
 
 ##
-vec_state =  MCTS.convert_state(initial_state)
+vec_state =  MCTS.convert_state(initial_state, mdp)
 allowed_actions = [1.0, 1.0, 1.0, 1.0]
 v = estimator.py_class[:estimate_value](vec_state)
 p = estimator.py_class[:estimate_distribution](vec_state, allowed_actions)
