@@ -10,23 +10,27 @@ Trains the neural network by:
 
 mutable struct Trainer
     rng::AbstractRNG
+    rng_eval::AbstractRNG
     training_steps::Int
     save_freq::Int
     eval_freq::Int
     eval_eps::Int
+    fix_eval_eps::Bool
     show_progress::Bool
     log_dir::String
 end
 
 function Trainer(;rng=MersenneTwister(rand(UInt32)),
+                  rng_eval=MersenneTwister(rand(UInt32)),
                   training_steps::Int=1,
                   save_freq::Int=Inf,
                   eval_freq::Int=Inf,
                   eval_eps::Int=1,
+                  fix_eval_eps::Bool=true,
                   show_progress=false,
                   log_dir::String="./"
                  )
-    return Trainer(rng, training_steps, save_freq, eval_freq, eval_eps, show_progress, log_dir)
+    return Trainer(rng, rng_eval, training_steps, save_freq, eval_freq, eval_eps, fix_eval_eps, show_progress, log_dir)
 end
 
 
@@ -95,9 +99,10 @@ function train{S,A}(trainer::Trainer,
         if div(step,trainer.eval_freq) > n_evals
             eval_eps = 1
             policy.training_phase=false
-            s_initial = initial_eval_state(mdp, trainer.rng)
+            rng = trainer.fix_eval_eps ? copy(trainer.rng_eval) : trainer.rng_eval   #if fix_eval, keep rng constant to always evaluate the same set of episodes
             episode_reward = []
             while eval_eps <= trainer.eval_eps
+                s_initial = initial_eval_state(mdp, rng)
                 hist = POMDPs.simulate(sim, mdp, policy, s_initial)
                 push!(episode_reward, sum(hist.reward_hist))
                 eval_eps+=1

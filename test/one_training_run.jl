@@ -45,6 +45,7 @@ sim_max_steps = 25
 
 
 rng=MersenneTwister(53)
+rng_eval=MersenneTwister(54)
 
 mdp = GridWorld(5,5,
                 penalty=0.,
@@ -78,5 +79,5 @@ policy = solve(solver, mdp)
 sim = HistoryRecorder(rng=rng, max_steps=sim_max_steps, show_progress=false)
 
 ##
-trainer = Trainer(rng=rng, training_steps=training_steps, save_freq=save_freq, eval_freq=eval_freq, eval_eps=eval_eps, show_progress=true, log_dir=log_path)
+trainer = Trainer(rng=rng, rng_eval=rng_eval, training_steps=training_steps, save_freq=save_freq, eval_freq=eval_freq, eval_eps=eval_eps, fix_eval_eps=true, show_progress=true, log_dir=log_path)
 train(trainer, sim, mdp, policy)
