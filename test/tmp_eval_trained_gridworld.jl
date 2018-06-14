@@ -14,7 +14,7 @@ mdp = GridWorld(5,5,
                 )
 state = GridWorldState(1,1)
 
-vec_state = MCTS.convert_state(state)
+vec_state = MCTS.convert_state(state,mdp)
 
 n_s = length(vec_state)
 n_a = n_actions(mdp)
@@ -47,7 +47,7 @@ allowed_actions = [1.0, 1.0, 1.0, 1.0]
 for y = 5:-1:1
    for x = 1:5
       state = GridWorldState(x,y)
-      vec_state = MCTS.convert_state(state)
+      vec_state = MCTS.convert_state(state,mdp)
       v = estimator.py_class[:estimate_value](vec_state)
       @printf("%.2f",v)
       print(" ")
@@ -59,7 +59,7 @@ println()
 for y = 5:-1:1
    for x = 1:5
       state = GridWorldState(x,y)
-      vec_state = MCTS.convert_state(state)
+      vec_state = MCTS.convert_state(state,mdp)
       p = estimator.py_class[:estimate_distribution](vec_state, allowed_actions)
       print(indmax(p))
       print(" ")

@@ -16,24 +16,28 @@ c_puct = 10.0
 replay_memory_max_size = 55
 training_start = 40
 training_steps = 100
+n_network_updates_per_episode = 10
 save_freq = 20
 eval_freq = 20
 eval_eps = 3
 # replay_memory_max_size = 100000
 # training_start = 5000
 # training_steps = 100000
+# n_network_updates_per_episode = 10
 # save_freq = 5000
 # eval_freq = 5000
 # eval_eps = 100
 # replay_memory_max_size = 100000
 # training_start = 10000
 # training_steps = 1000000
+# n_network_updates_per_episode = 10
 # save_freq = 10000
 # eval_freq = 10000
 # eval_eps = 100
 # replay_memory_max_size = 10000
 # training_start = 5000
 # training_steps = 100000
+# n_network_updates_per_episode = 10
 # save_freq = 5000
 # eval_freq = 5000
 # eval_eps = 100
@@ -79,5 +83,5 @@ policy = solve(solver, mdp)
 sim = HistoryRecorder(rng=rng, max_steps=sim_max_steps, show_progress=false)
 
 ##
-trainer = Trainer(rng=rng, rng_eval=rng_eval, training_steps=training_steps, save_freq=save_freq, eval_freq=eval_freq, eval_eps=eval_eps, fix_eval_eps=true, show_progress=true, log_dir=log_path)
+trainer = Trainer(rng=rng, rng_eval=rng_eval, training_steps=training_steps, n_network_updates_per_episode=n_network_updates_per_episode, save_freq=save_freq, eval_freq=eval_freq, eval_eps=eval_eps, fix_eval_eps=true, show_progress=true, log_dir=log_path)
 train(trainer, sim, mdp, policy)

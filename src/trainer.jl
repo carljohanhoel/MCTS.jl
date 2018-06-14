@@ -12,6 +12,7 @@ mutable struct Trainer
     rng::AbstractRNG
     rng_eval::AbstractRNG
     training_steps::Int
+    n_network_updates_per_episode::Int
     save_freq::Int
     eval_freq::Int
     eval_eps::Int
@@ -23,6 +24,7 @@ end
 function Trainer(;rng=MersenneTwister(rand(UInt32)),
                   rng_eval=MersenneTwister(rand(UInt32)),
                   training_steps::Int=1,
+                  n_network_updates_per_episode::Int=1,
                   save_freq::Int=Inf,
                   eval_freq::Int=Inf,
                   eval_eps::Int=1,
@@ -30,7 +32,7 @@ function Trainer(;rng=MersenneTwister(rand(UInt32)),
                   show_progress=false,
                   log_dir::String="./"
                  )
-    return Trainer(rng, rng_eval, training_steps, save_freq, eval_freq, eval_eps, fix_eval_eps, show_progress, log_dir)
+    return Trainer(rng, rng_eval, training_steps, n_network_updates_per_episode, save_freq, eval_freq, eval_eps, fix_eval_eps, show_progress, log_dir)
 end
 
 
@@ -79,10 +81,9 @@ function train{S,A}(trainer::Trainer,
            n_new_samples-=1
         end
 
-        #Update network   - ZZZZZZZZZZZZZZZ Add option to run several times after every episode
-        # println("Update network")
+        #Update network
         add_samples_to_memory(policy.solver.estimate_value, new_states, new_distributions, new_values, mdp)
-        for i in 1:10
+        for i in 1:trainer.n_network_updates_per_episode
             update_network(policy.solver.estimate_value)
         end
 
