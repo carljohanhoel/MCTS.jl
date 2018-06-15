@@ -21,22 +21,22 @@ function initialize_estimator(estimator_path::String, log_path::String, n_states
 end
 
 
-estimate_value(estimator::NNEstimator, mdp::MDP, state, depth::Int) = estimate_value(estimator, state, mdp)
+estimate_value(estimator::NNEstimator, p::Union{POMDP,MDP}, state, depth::Int) = estimate_value(estimator, state, p)
 
-function estimate_value(estimator::NNEstimator, state, mdp::MDP)
-    converted_state = convert_state(state, mdp)
+function estimate_value(estimator::NNEstimator, state, p::Union{POMDP,MDP})
+    converted_state = convert_state(state, p)
     value = estimator.py_class[:estimate_value](converted_state)
     return value
 end
 
-function estimate_distribution(estimator::NNEstimator, state, allowed_actions, mdp)
-    converted_state = convert_state(state, mdp)
+function estimate_distribution(estimator::NNEstimator, state, allowed_actions, p::Union{POMDP,MDP})
+    converted_state = convert_state(state, p)
     dist = estimator.py_class[:estimate_distribution](converted_state,allowed_actions)
     return dist
 end
 
-function add_samples_to_memory(estimator::NNEstimator, states, dists, vals, mdp)
-    converted_states = convert_state(states, mdp)
+function add_samples_to_memory(estimator::NNEstimator, states, dists, vals, p)
+    converted_states = convert_state(states, p)
     estimator.py_class[:add_samples_to_memory](converted_states, dists, vals)
 end
 
@@ -53,9 +53,12 @@ function load_network(estimator::NNEstimator, name::String)
 end
 
 #Needs to be defined for each problem to fit the input of the nerual network
-function convert_state(state::Type, mdp::MDP)
+function convert_state(state::Type, p::Union{POMDP,MDP})
     converted_state = state
     return converted_state
+end
+
+function state_dist() #Dummy function, to be defined for each problem
 end
 
 #Simple example for GridWorld, here for tests. Remove later.

@@ -49,7 +49,7 @@ export
     default_action,
     train,
     convert_state,
-    initial_eval_state
+    state_dist
 
 export
     AbstractStateNode,

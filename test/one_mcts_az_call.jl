@@ -38,7 +38,7 @@ estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, replay_memory_m
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180530_232149/5014")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180531_025035/45001")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180601_010824_dirichlet_noise_added/70012")
-load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180609_022938_smaller_replay_mem/100008")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180609_022938_smaller_replay_mem/100008")
 
 solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=ec,
                 k_state=3.,

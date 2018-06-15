@@ -34,7 +34,7 @@ log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.n
 estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, replay_memory_max_size, training_start)
 
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180530_022108/50001")
-load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180531_025035/45001")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180531_025035/45001")
 
 solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=c_puct,
                k_state=3.,
@@ -64,14 +64,14 @@ step = 1
 print(hist.action_hist[step])
 inchromium(D3Tree(hist.ainfo_hist[step][:tree],init_expand=1))
 
-#Extract training samples
+##Extract training samples
 n_a = length(actions(mdp))
 new_states = deepcopy(hist.state_hist)
 new_values = Vector{Float64}(length(new_states))
 new_distributions = Array{Float64}(length(new_states),n_a)
 
 end_state = new_states[end]
-end_value = isterminal(mdp,end_state) ? 0 : estimate_value(solver.estimate_value, end_state)
+end_value = isterminal(mdp,end_state) ? 0 : estimate_value(solver.estimate_value, end_state, mdp)
 new_values[end] = end_value
 value = end_value
 for (i,state) in enumerate(new_states[end-1:-1:1])
