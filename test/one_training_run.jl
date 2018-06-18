@@ -9,7 +9,7 @@ using D3Trees
 
 ##
 
-n_iter = 1000
+n_iter = 2000
 depth = 15
 c_puct = 10.0
 
@@ -37,7 +37,7 @@ eval_eps = 3
 # replay_memory_max_size = 10000
 # training_start = 5000
 # training_steps = 100000
-# n_network_updates_per_episode = 10
+# n_network_updates_per_episode = 100
 # save_freq = 5000
 # eval_freq = 5000
 # eval_eps = 100
@@ -61,14 +61,16 @@ s_initial = GridWorldState(1,1)
 
 n_s = length(MCTS.convert_state(s_initial, mdp))
 n_a = n_actions(mdp)
+v_min = -10.
+v_max = 10.
 estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/nn_estimator"
 log_name = length(ARGS)>0 ? ARGS[1] : ""
 log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS_")*log_name
-estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, replay_memory_max_size, training_start)
+estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, v_min, v_max, replay_memory_max_size, training_start)
 
 solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=c_puct,
                k_state=3.,
-               tree_in_info=true,
+               tree_in_info=false,
                alpha_state=0.2,
                enable_action_pw=false,
                check_repeat_state=false,

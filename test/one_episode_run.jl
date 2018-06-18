@@ -27,14 +27,17 @@ initial_state = GridWorldState(5,1)
 
 n_s = length(MCTS.convert_state(initial_state, mdp))
 n_a = n_actions(mdp)
+v_min = -10.
+v_max = 10.
 replay_memory_max_size = 55
 training_start = 40
 estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/nn_estimator"
 log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS")
-estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, replay_memory_max_size, training_start)
+estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, v_min, v_max, replay_memory_max_size, training_start)
 
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180530_022108/50001")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180531_025035/45001")
+load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180616_005257_100_updates_per_episode/100001")
 
 solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=c_puct,
                k_state=3.,
@@ -52,7 +55,7 @@ policy = solve(solver, mdp)
 
 
 ##
-
+policy.training_phase = false   #if false, evaluate trained agent, no randomness in action choices
 sim = HistoryRecorder(rng=rng, max_steps=25, show_progress=true)
 hist = simulate(sim, mdp, policy, initial_state)
 

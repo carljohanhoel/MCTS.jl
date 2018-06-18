@@ -39,7 +39,10 @@ estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, replay_memory_m
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180601_010824_dirichlet_noise_added/70012")
 
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180608_191845_rolled_back_from_parallel/30007")
-load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180609_022938_smaller_replay_mem/100008")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180609_022938_smaller_replay_mem/100008")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180616_005148_std/100016")
+load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180616_005257_100_updates_per_episode/100001")
+
 
 
 allowed_actions = [1.0, 1.0, 1.0, 1.0]
