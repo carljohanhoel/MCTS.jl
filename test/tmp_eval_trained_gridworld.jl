@@ -45,7 +45,8 @@ estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, v_min, v_max, r
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180616_005148_std/100016")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180616_005257_100_updates_per_episode/100001")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180618_195010_10000_mcts_searches_100_updates/20020")
-load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180618_195141_2000_mcts_iterations_100_updates/75001")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180618_195141_2000_mcts_iterations_100_updates/75001")
+load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180620_210355_2000_mcts_searches_100_updates_5_puct/25000")
 
 
 

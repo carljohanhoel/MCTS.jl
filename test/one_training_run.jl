@@ -11,7 +11,7 @@ using D3Trees
 
 n_iter = 2000
 depth = 15
-c_puct = 5. #10.0
+c_puct = 2. #5. #10.0
 
 simple_run = false
 if simple_run
