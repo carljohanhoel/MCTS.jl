@@ -61,7 +61,7 @@ function train(trainer::Trainer,
 
         #Simulate one episode
         if p isa POMDP
-            initial_state_dist = state_dist(s_initial)
+            initial_state_dist = state_dist(p, s_initial)
             hist = POMDPs.simulate(sim, p, policy, belief_updater, initial_state_dist, s_initial)
         else
             hist = POMDPs.simulate(sim, p, policy, s_initial)
@@ -121,7 +121,7 @@ function train(trainer::Trainer,
             while eval_eps <= trainer.eval_eps
                 s_initial = initial_eval_state(p, rng)
                 if p isa POMDP
-                    initial_state_dist = state_dist(s_initial)
+                    initial_state_dist = state_dist(p, s_initial)
                     hist = POMDPs.simulate(sim, p, policy, belief_updater, initial_state_dist, s_initial)
                 else
                     hist = POMDPs.simulate(sim, p, policy, s_initial)
