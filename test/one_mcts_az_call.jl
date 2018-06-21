@@ -9,11 +9,11 @@ using D3Trees
 
 ##
 
-n_iter = 1000
+n_iter = 2000
 depth = 15
-ec = 10.0
+ec = 5.#10.0
 
-rng=MersenneTwister(54)
+rng=MersenneTwister(56)
 rng_dpw = deepcopy(rng)
 
 mdp = GridWorld(5,5,
@@ -22,7 +22,7 @@ mdp = GridWorld(5,5,
                 tp = 0.8,
                 terminals = [GridWorldState(3,3),GridWorldState(5,3),GridWorldState(5,5),GridWorldState(1,1)],
                 )
-state = GridWorldState(4,1)
+state = GridWorldState(3,1)
 
 
 n_s = length(MCTS.convert_state(state, mdp))
@@ -41,7 +41,8 @@ estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, v_min, v_max, r
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180531_025035/45001")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180601_010824_dirichlet_noise_added/70012")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180609_022938_smaller_replay_mem/100008")
-load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180616_005257_100_updates_per_episode/100001")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180616_005257_100_updates_per_episode/100001")
+load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180618_195141_2000_mcts_iterations_100_updates/75001")
 
 solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=ec,
                 k_state=3.,
