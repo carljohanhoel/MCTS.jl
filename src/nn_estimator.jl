@@ -11,11 +11,11 @@ mutable struct NNEstimator
 end
 
 function NNEstimator(rng::AbstractRNG, estimator_path::String, log_path::String, n_states::Int, n_actions::Int,  v_min::Float64, v_max::Float64, replay_memory_max_size::Int, training_start::Int) #
-    py_class = initialize_estimator(estimator_path, log_path, n_states, n_actions, v_min, v_max, replay_memory_max_size, training_start)
+    py_class = initialize_estimator(estimator_path, log_path, n_states, n_actions, replay_memory_max_size, training_start)
     return NNEstimator(rng, py_class, estimator_path, v_min, v_max)
 end
 
-function initialize_estimator(estimator_path::String, log_path::String, n_states::Int, n_actions::Int, v_min::Float64, v_max::Float64, replay_memory_max_size::Int, training_start::Int)
+function initialize_estimator(estimator_path::String, log_path::String, n_states::Int, n_actions::Int, replay_memory_max_size::Int, training_start::Int)
     unshift!(PyVector(pyimport("sys")["path"]), dirname(estimator_path))
     eval(parse(string("@pyimport ", basename(estimator_path), " as python_module")))
     py_class = python_module.NeuralNetwork(n_states, n_actions, replay_memory_max_size, training_start, log_path)

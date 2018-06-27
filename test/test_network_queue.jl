@@ -7,16 +7,16 @@ using POMDPModels
 
 ##
 n_s = 3
-n_a = 5
+n_a = 4
 v_min = -10.
 v_max = 10.
 replay_memory_max_size = 100
 training_start = 20
-estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/nn_estimator"
+estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/neural_net"
 log_name = length(ARGS)>0 ? ARGS[1] : ""
 log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS_")*log_name
 ##
-@spawnat 2 run_queue(NetworkQueue(estimator_path, log_path, n_s, n_a, v_min, v_max, replay_memory_max_size, training_start, true),cmd_queue,res_queue)
+@spawnat 2 run_queue(NetworkQueue(estimator_path, log_path, n_s, n_a, replay_memory_max_size, training_start, true),cmd_queue,res_queue)
 
 ##
 
@@ -57,11 +57,13 @@ mdp = GridWorld(5,5,
                 tp = 0.8,
                 terminals = [GridWorldState(3,3),GridWorldState(5,3),GridWorldState(5,5),GridWorldState(1,1)],
                 )
-state = GridWorldState(3,1)
+state = GridWorldState(5,4)
 
-estimator = NNEstimatorParallel()
+estimator = NNEstimatorParallel(v_min, v_max)
 
-allowed_actions = [1.0, 1.0, 1.0, 1.0]
+load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180620_210355_2000_mcts_searches_100_updates_5_puct/25000")
+
+allowed_actions = ones(1,4)
 
 estimate_distribution(estimator, state, allowed_actions, mdp)
 estimate_value(estimator, state, mdp)

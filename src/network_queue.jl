@@ -9,15 +9,15 @@ const res_queue = fill(RemoteChannel(()->Channel{Array{Float64}}(4)),128) #128 m
    debug::Bool
 end
 
-@everywhere function NetworkQueue(estimator_path::String, log_path::String, n_states::Int, n_actions::Int, v_min::Float64, v_max::Float64, replay_memory_max_size::Int, training_start::Int, debug::Bool=false) #
-    py_class = initialize_queue(estimator_path, log_path, n_states, n_actions, v_min, v_max, replay_memory_max_size, training_start)
+@everywhere function NetworkQueue(estimator_path::String, log_path::String, n_states::Int, n_actions::Int, replay_memory_max_size::Int, training_start::Int, debug::Bool=false) #
+    py_class = initialize_queue(estimator_path, log_path, n_states, n_actions, replay_memory_max_size, training_start)
     return NetworkQueue(py_class, Array{Tuple}(0), 1, 0, debug)
 end
 
-@everywhere function initialize_queue(estimator_path::String, log_path::String, n_states::Int, n_actions::Int, v_min::Float64, v_max::Float64, replay_memory_max_size::Int, training_start::Int)
+@everywhere function initialize_queue(estimator_path::String, log_path::String, n_states::Int, n_actions::Int, replay_memory_max_size::Int, training_start::Int)
     unshift!(PyVector(pyimport("sys")["path"]), dirname(estimator_path))
     eval(parse(string("@pyimport ", basename(estimator_path), " as python_module")))
-    py_class = python_module.NNEstimator(n_states, n_actions, v_min, v_max, replay_memory_max_size, training_start, log_path)
+    py_class = python_module.NeuralNetwork(n_states, n_actions, replay_memory_max_size, training_start, log_path)
     return py_class
 end
 
@@ -34,7 +34,7 @@ end
       for (i,obj) in enumerate(q.stash)
          kind, state, proc = obj
          if kind == 0
-            put!(res_queue[proc],dist[i,:])
+            put!(res_queue[proc],reshape(dist[i,:], (size(dist[i,:])...,1))') #Reshape creates 1×n Array{Float32,2}
          else
             put!(res_queue[proc],[val[i]])
          end
@@ -89,6 +89,8 @@ end
 
 
 struct NNEstimatorParallel
+   v_min::Float64
+   v_max::Float64
 end
 
 estimate_value(estimator::NNEstimatorParallel, p::Union{POMDP,MDP}, state, depth::Int) = estimate_value(estimator, state, p)
@@ -97,19 +99,34 @@ function estimate_value(estimator::NNEstimatorParallel, state, p::Union{POMDP,MD
     converted_state = convert_state(state, p)
     put!(cmd_queue,("predict_value",myid(),converted_state,nothing,nothing,nothing,nothing,nothing))
     value = take!(res_queue[myid()])
-    return value
+    value = value*(estimator.v_max-estimator.v_min)+estimator.v_min #Scale [0,1]->[v_min,v_max]
+    return value[1] #Convert to scalar
 end
 
 function estimate_distribution(estimator::NNEstimatorParallel, state, allowed_actions, p::Union{POMDP,MDP})
     converted_state = convert_state(state, p)
     put!(cmd_queue,("predict_distribution",myid(),converted_state,nothing,nothing,nothing,nothing,nothing))
     dist = take!(res_queue[myid()])
-#ZZZZZZZZZ Include allowed actions
+    dist = dist.*allowed_actions
+    sum_dist = sum(dist,2)
+    if any(sum_dist.==0)   #Before the network is trained, the only allowed actions could get prob 0. In that case, set equal prior prob.
+         println("error, sum allowed dist = 0")
+         println(state)
+         println(dist)
+         println(allowed_actions)
+         add_dist = ((dist*0+1) .* (sum_dist .== 0.)).*allowed_actions
+         dist += add_dist
+         sum_dist += sum(add_dist,2)
+    end
+    # dist = [dist[i,:]/sum_dist[i] for i in range(0,len(sum_dist))]
+    dist = dist./sum_dist
+
     return dist
 end
 
 function add_samples_to_memory(estimator::NNEstimatorParallel, states, dists, vals, p)
     converted_states = convert_state(states, p)
+    vals = (vals-estimator.v_min)/(estimator.v_max-estimator.v_min)
     put!(cmd_queue,("add_samples_to_memory",myid(),nothing,converted_states,dists,vals,nothing,nothing))
     out = take!(res_queue[myid()])
 end
