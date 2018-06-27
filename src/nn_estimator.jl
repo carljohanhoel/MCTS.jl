@@ -6,17 +6,19 @@ mutable struct NNEstimator
     rng::AbstractRNG
     py_class::PyCall.PyObject
     estimator_path::String
+    v_min::Float64
+    v_max::Float64
 end
 
 function NNEstimator(rng::AbstractRNG, estimator_path::String, log_path::String, n_states::Int, n_actions::Int,  v_min::Float64, v_max::Float64, replay_memory_max_size::Int, training_start::Int) #
     py_class = initialize_estimator(estimator_path, log_path, n_states, n_actions, v_min, v_max, replay_memory_max_size, training_start)
-    return NNEstimator(rng, py_class, estimator_path)
+    return NNEstimator(rng, py_class, estimator_path, v_min, v_max)
 end
 
 function initialize_estimator(estimator_path::String, log_path::String, n_states::Int, n_actions::Int, v_min::Float64, v_max::Float64, replay_memory_max_size::Int, training_start::Int)
     unshift!(PyVector(pyimport("sys")["path"]), dirname(estimator_path))
     eval(parse(string("@pyimport ", basename(estimator_path), " as python_module")))
-    py_class = python_module.NNEstimator(n_states, n_actions, v_min, v_max, replay_memory_max_size, training_start, log_path)
+    py_class = python_module.NeuralNetwork(n_states, n_actions, replay_memory_max_size, training_start, log_path)
     return py_class
 end
 
@@ -25,18 +27,34 @@ estimate_value(estimator::NNEstimator, p::Union{POMDP,MDP}, state, depth::Int) =
 
 function estimate_value(estimator::NNEstimator, state, p::Union{POMDP,MDP})
     converted_state = convert_state(state, p)
-    value = estimator.py_class[:estimate_value](converted_state)
-    return value
+    dist, value = estimator.py_class[:forward_pass](converted_state)
+    value = value*(estimator.v_max-estimator.v_min)+estimator.v_min #Scale [0,1]->[v_min,v_max]
+    return value[1] #Convert to scalar
 end
 
 function estimate_distribution(estimator::NNEstimator, state, allowed_actions, p::Union{POMDP,MDP})
     converted_state = convert_state(state, p)
-    dist = estimator.py_class[:estimate_distribution](converted_state,allowed_actions)
+    dist, value = estimator.py_class[:forward_pass](converted_state)
+    dist = dist.*allowed_actions
+    sum_dist = sum(dist,2)
+    if any(sum_dist.==0)   #Before the network is trained, the only allowed actions could get prob 0. In that case, set equal prior prob.
+        println("error, sum allowed dist = 0")
+        println(state)
+        println(dist)
+        println(allowed_actions)
+        add_dist = ((dist*0+1) .* (sum_dist .== 0.)).*allowed_actions
+        dist += add_dist
+        sum_dist += sum(add_dist,2)
+    end
+    # dist = [dist[i,:]/sum_dist[i] for i in range(0,len(sum_dist))]
+    dist = dist./sum_dist
+
     return dist
 end
 
 function add_samples_to_memory(estimator::NNEstimator, states, dists, vals, p)
     converted_states = convert_state(states, p)
+    vals = (vals-estimator.v_min)/(estimator.v_max-estimator.v_min)
     estimator.py_class[:add_samples_to_memory](converted_states, dists, vals)
 end
 

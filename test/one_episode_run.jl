@@ -31,7 +31,7 @@ v_min = -10.
 v_max = 10.
 replay_memory_max_size = 55
 training_start = 40
-estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/nn_estimator"
+estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/neural_net"
 log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS")
 estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, v_min, v_max, replay_memory_max_size, training_start)
 
@@ -60,7 +60,6 @@ sim = HistoryRecorder(rng=rng, max_steps=25, show_progress=true)
 hist = simulate(sim, mdp, policy, initial_state)
 
 println("sim done")
-estimator.py_class[:debug_print_n_calls]()
 
 
 step = 1
@@ -101,7 +100,6 @@ end
 ##
 vec_state =  MCTS.convert_state(initial_state, mdp)
 allowed_actions = [1.0, 1.0, 1.0, 1.0]
-v = estimator.py_class[:estimate_value](vec_state)
-p = estimator.py_class[:estimate_distribution](vec_state, allowed_actions)
+p,v = estimator.py_class[:forward_pass](vec_state)
 println(v)
 print(p)

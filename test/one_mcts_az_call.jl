@@ -31,7 +31,7 @@ v_min = -10.
 v_max = 10.
 replay_memory_max_size = 55
 training_start = 40
-estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/nn_estimator"
+estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/neural_net"
 log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS")
 estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, v_min, v_max, replay_memory_max_size, training_start)
 
@@ -64,7 +64,6 @@ policy.training_phase = false   #if false, evaluate trained agent, no randomness
 a, ai = action_info(policy, state)
 inchromium(D3Tree(ai[:tree],init_expand=1))
 
-estimator.py_class[:debug_print_n_calls]()
 ##
 #DPW reference
 

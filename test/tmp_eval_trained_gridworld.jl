@@ -23,7 +23,7 @@ v_max = 10.
 replay_memory_max_size = 55
 training_start = 40
 rng = MersenneTwister(12)
-estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/nn_estimator"
+estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/neural_net"
 log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS")
 
 # load_network = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180605_020108_same_as_previous_but_queue_in_py/100000"
@@ -56,8 +56,8 @@ for y = 5:-1:1
    for x = 1:5
       state = GridWorldState(x,y)
       vec_state = MCTS.convert_state(state,mdp)
-      v = estimator.py_class[:estimate_value](vec_state)
-      @printf("%.2f",v)
+      v = estimate_value(estimator,state,mdp)
+      @printf("%.2f",v[1])
       print(" ")
    end
    println()
@@ -68,7 +68,7 @@ for y = 5:-1:1
    for x = 1:5
       state = GridWorldState(x,y)
       vec_state = MCTS.convert_state(state,mdp)
-      p = estimator.py_class[:estimate_distribution](vec_state, allowed_actions)
+      p,v = estimator.py_class[:forward_pass](vec_state)
       print(indmax(p))
       print(" ")
    end

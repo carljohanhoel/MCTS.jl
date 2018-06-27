@@ -13,7 +13,7 @@ n_iter = 2000
 depth = 15
 c_puct = 2. #5. #10.0
 
-simple_run = false
+simple_run = true
 if simple_run
                 replay_memory_max_size = 55
                 training_start = 40
@@ -67,7 +67,7 @@ n_s = length(MCTS.convert_state(s_initial, mdp))
 n_a = n_actions(mdp)
 v_min = -10.
 v_max = 10.
-estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/nn_estimator"
+estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/neural_net"
 log_name = length(ARGS)>0 ? ARGS[1] : ""
 log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS_")*log_name
 estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, v_min, v_max, replay_memory_max_size, training_start)

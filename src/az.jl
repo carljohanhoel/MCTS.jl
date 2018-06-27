@@ -122,9 +122,9 @@ function simulate(az::AZPlanner, snode::Int)
         allowed_actions = actions(az.mdp, s)   #This is handled a bit weird to make it compatible with existing structure of Multilane.jl
         all_actions = actions(az.mdp)
         if length(allowed_actions) == length(all_actions)
-            allowed_actions_vec = ones(Float64, length(all_actions))
+            allowed_actions_vec = ones(Float64, 1, length(all_actions))
         else
-            allowed_actions_vec = zeros(Float64, length(all_actions))
+            allowed_actions_vec = zeros(Float64, 1, length(all_actions))
             for idx in collect(allowed_actions.acceptable)
                 allowed_actions_vec[idx] = 1.0
             end

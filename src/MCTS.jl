@@ -40,6 +40,7 @@ export
     estimate_distribution,
     add_samples_to_memory,
     update_network,
+    save_network,
     load_network,
     init_N,
     init_Q,
