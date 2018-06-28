@@ -1,7 +1,7 @@
 const cmd_queue = RemoteChannel(()->Channel{Tuple}(128))
 const res_queue = fill(RemoteChannel(()->Channel{Array{Float64}}(4)),128) #128 max number of processes
 
-@everywhere mutable struct NetworkQueue
+mutable struct NetworkQueue
    py_class::PyCall.PyObject
    stash::Array{Tuple}
    trigger::Int
@@ -9,12 +9,12 @@ const res_queue = fill(RemoteChannel(()->Channel{Array{Float64}}(4)),128) #128 m
    debug::Bool
 end
 
-@everywhere function NetworkQueue(estimator_path::String, log_path::String, n_states::Int, n_actions::Int, replay_memory_max_size::Int, training_start::Int, debug::Bool=false) #
+function NetworkQueue(estimator_path::String, log_path::String, n_states::Int, n_actions::Int, replay_memory_max_size::Int, training_start::Int, debug::Bool=false) #
     py_class = initialize_queue(estimator_path, log_path, n_states, n_actions, replay_memory_max_size, training_start)
     return NetworkQueue(py_class, Array{Tuple}(0), 1, 0, debug)
 end
 
-@everywhere function initialize_queue(estimator_path::String, log_path::String, n_states::Int, n_actions::Int, replay_memory_max_size::Int, training_start::Int)
+function initialize_queue(estimator_path::String, log_path::String, n_states::Int, n_actions::Int, replay_memory_max_size::Int, training_start::Int)
     unshift!(PyVector(pyimport("sys")["path"]), dirname(estimator_path))
     eval(parse(string("@pyimport ", basename(estimator_path), " as python_module")))
     py_class = python_module.NeuralNetwork(n_states, n_actions, replay_memory_max_size, training_start, log_path)
@@ -22,7 +22,7 @@ end
 end
 
 #This function is started in some process and then continuously running there. Requests for e.g. forward passes or update the network are placed in the cmd_queue and results are reported back in the res_queue corresponding to the requesting process.
-@everywhere function run_queue(q::NetworkQueue, cmd_queue, res_queue)
+function run_queue(q::NetworkQueue, cmd_queue, res_queue)
    remotecall_fetch(println,1,"Starting network queue")
 
    function process_stash(q::NetworkQueue)
@@ -145,29 +145,29 @@ function load_network(estimator::NNEstimatorParallel, name::String)
 end
 
 
-#Needs to be defined for each problem to fit the input of the nerual network
-function convert_state(state::Type, p::Union{POMDP,MDP})
-    converted_state = state
-    return converted_state
-end
-
-function state_dist() #Dummy function, to be defined for each problem
-end
-
-#Simple example for GridWorld, here for tests. Remove later.
-using POMDPModels
-function convert_state(state::Vector{GridWorldState}, mdp::GridWorld)
-    n = length(state)
-    converted_state = Array{Float64}(n,3)
-    for i in 1:n
-        converted_state[i,:] = convert_state(state[i], mdp)
-    end
-    return converted_state
-end
-function convert_state(state::GridWorldState, mdp::GridWorld)
-    converted_state = Array{Float64}(1,3)
-    converted_state[1] = state.x
-    converted_state[2] = state.y
-    converted_state[3] = state.done ? 1 : 0
-    return converted_state
-end
+# #Needs to be defined for each problem to fit the input of the nerual network
+# function convert_state(state::Type, p::Union{POMDP,MDP})
+#     converted_state = state
+#     return converted_state
+# end
+#
+# function state_dist() #Dummy function, to be defined for each problem
+# end
+#
+# #Simple example for GridWorld, here for tests. Remove later.
+# using POMDPModels
+# function convert_state(state::Vector{GridWorldState}, mdp::GridWorld)
+#     n = length(state)
+#     converted_state = Array{Float64}(n,3)
+#     for i in 1:n
+#         converted_state[i,:] = convert_state(state[i], mdp)
+#     end
+#     return converted_state
+# end
+# function convert_state(state::GridWorldState, mdp::GridWorld)
+#     converted_state = Array{Float64}(1,3)
+#     converted_state[1] = state.x
+#     converted_state[2] = state.y
+#     converted_state[3] = state.done ? 1 : 0
+#     return converted_state
+# end

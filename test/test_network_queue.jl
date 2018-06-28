@@ -1,8 +1,10 @@
-addprocs(3)
+addprocs(3)   #Seems to be necessary to add this first, before @everywhere using MCTS
 
-@everywhere using POMDPs
-@everywhere using PyCall
-include("../src/network_queue.jl")
+@everywhere using MCTS
+
+# @everywhere using POMDPs
+# @everywhere using PyCall
+# include("../src/network_queue.jl")
 using POMDPModels
 
 ##
@@ -71,3 +73,6 @@ add_samples_to_memory(estimator, state, rand(1,4), rand(1,1), mdp)
 update_network(estimator)
 save_network(estimator, "../Logs/testSave4")
 load_network(estimator, "../Logs/testSave4")
+
+sleep(2)
+print("Tests passed")

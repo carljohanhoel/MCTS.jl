@@ -23,6 +23,12 @@ export
     NNSolver,
     NNPolicy,
     NNEstimator,
+    NNEstimatorParallel,
+    NetworkQueue,
+    initialize_queue,
+    run_queue,
+    cmd_queue,
+    res_queue,
     Trainer,
     BeliefMCTSSolver,
     AbstractMCTSPlanner,
@@ -69,6 +75,7 @@ abstract type AbstractStateNode end
 
 include("requirements_info.jl")
 include("nn_estimator.jl")
+include("network_queue.jl")
 include("trainer.jl")
 include("domain_knowledge.jl")
 include("vanilla.jl")
