@@ -122,6 +122,7 @@ function train(trainer::Trainer,
             end
             rng = trainer.fix_eval_eps ? copy(trainer.rng_eval) : trainer.rng_eval   #if fix_eval, keep rng constant to always evaluate the same set of episodes
             episode_reward = []
+            episode_discounted_reward = []
             while eval_eps <= trainer.eval_eps
                 s_initial = initial_eval_state(p, rng)
                 if p isa POMDP
@@ -131,10 +132,11 @@ function train(trainer::Trainer,
                     hist = POMDPs.simulate(sim, p, policy, s_initial)
                 end
                 push!(episode_reward, sum(hist.reward_hist))
+                push!(episode_discounted_reward, sum(hist.reward_hist)*p.discount^(length(hist.reward_hist)-1))
                 eval_eps+=1
             end
             open(trainer.log_dir*"/"*"evalResults.txt","a") do f
-                writedlm(f, [[process_id, step, mean(episode_reward), episode_reward]], ", ")
+                writedlm(f, [[process_id, step, mean(episode_reward), mean(episode_discounted_reward), episode_reward, episode_discounted_reward]], ", ")
             end
             if policy isa AZPlanner
                 policy.training_phase=true
@@ -212,10 +214,14 @@ function train_parallel(trainer::Trainer,
         trainer_vec[i].save_freq = typemax(Int)
     end
 
-    set_stash_size(policy.solved_estimate, min(Sys.CPU_CORES,n_procs-2))
+    stash_size = min(Sys.CPU_CORES,n_procs-2)
+    set_stash_size(policy.solved_estimate, stash_size)
 
+    processes = []
     for i in 1:n_procs-2
-        @spawnat i+2 train(trainer_vec[i], sim_vec[i], problem_vec[i], policy_vec[i], belief_vec[i])
+        out = @spawnat i+2 train(trainer_vec[i], sim_vec[i], problem_vec[i], policy_vec[i], belief_vec[i])
+        push!(processes, out)
     end
 
+    return processes
 end

@@ -4,9 +4,11 @@ parallel_version = true   #Test code in parallel mode
 # parallel_version = false
 
 if parallel_version
-   addprocs(9)
+   n_workers = 8
+   addprocs(n_workers+1)
    @everywhere using MCTS
 else
+   n_workers = 1
    using MCTS
 end
 
@@ -22,19 +24,19 @@ n_iter = 2000
 depth = 15
 c_puct = 2. #5. #10.0
 
-simple_run = true
-# simple_run = false
+# simple_run = true
+simple_run = false
 
 if simple_run
    n_iter = 20
 
-   replay_memory_max_size = 55
-   training_start = 40
-   training_steps = 100
+   replay_memory_max_size = 200
+   training_start = 100
+   training_steps = Int(ceil(1000/n_workers))
    n_network_updates_per_episode = 10
-   save_freq = 40
-   eval_freq = 40
-   eval_eps = 3
+   save_freq = Int(ceil(100/n_workers))
+   eval_freq = Int(ceil(100/n_workers))
+   eval_eps = Int(ceil(8/n_workers))
 else
    # replay_memory_max_size = 100000
    # training_start = 5000
@@ -51,12 +53,12 @@ else
    # eval_freq = 10000
    # eval_eps = 100
    replay_memory_max_size = 10000
-   training_start = 5000
-   training_steps = 100000
+   training_start = 5000 #This is used in py, so includes all workers
+   training_steps = Int(ceil(100000/n_workers))
    n_network_updates_per_episode = 100
-   save_freq = 5000
-   eval_freq = 5000
-   eval_eps = 100
+   save_freq = Int(ceil(5000/n_workers))
+   eval_freq = Int(ceil(5000/n_workers))
+   eval_eps = Int(ceil(100/n_workers))
 end
 
 sim_max_steps = 25
@@ -85,12 +87,16 @@ log_name = length(ARGS)>0 ? ARGS[1] : ""
 log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS_")*log_name
 
 if parallel_version
+   #Start queue on process 2
    @spawnat 2 run_queue(NetworkQueue(estimator_path, log_path, n_s, n_a, replay_memory_max_size, training_start, false),cmd_queue,res_queue)
    estimator = NNEstimatorParallel(v_min, v_max)
    sleep(3) #Wait for queue to be set up before continuing
 else
    estimator = NNEstimator(rng_estimator, estimator_path, log_path, n_s, n_a, v_min, v_max, replay_memory_max_size, training_start)
 end
+
+#Load trained network to continue training
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180629_024700_2000_mcts_searches_100_updates_2_puct_8_queues/5001")
 
 solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=c_puct,
                k_state=3.,
@@ -111,7 +117,12 @@ sim = HistoryRecorder(rng=rng_history, max_steps=sim_max_steps, show_progress=fa
 ##
 trainer = Trainer(rng=rng_trainer, rng_eval=rng_evaluator, training_steps=training_steps, n_network_updates_per_episode=n_network_updates_per_episode, save_freq=save_freq, eval_freq=eval_freq, eval_eps=eval_eps, fix_eval_eps=true, show_progress=true, log_dir=log_path)
 if parallel_version
-   train_parallel(trainer, sim, mdp, policy)
+   processes = train_parallel(trainer, sim, mdp, policy)
 else
    train(trainer, sim, mdp, policy)
+end
+
+#This make Julia wait with terminating until all processes are done. However, all processes will never finish when stash size is bigger than 1. Fine for now...
+for proc in processes
+   fetch(proc)
 end
