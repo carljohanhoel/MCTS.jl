@@ -118,11 +118,10 @@ sim = HistoryRecorder(rng=rng_history, max_steps=sim_max_steps, show_progress=fa
 trainer = Trainer(rng=rng_trainer, rng_eval=rng_evaluator, training_steps=training_steps, n_network_updates_per_episode=n_network_updates_per_episode, save_freq=save_freq, eval_freq=eval_freq, eval_eps=eval_eps, fix_eval_eps=true, show_progress=true, log_dir=log_path)
 if parallel_version
    processes = train_parallel(trainer, sim, mdp, policy)
+
+   for proc in processes #This make Julia wait with terminating until all processes are done. However, all processes will never finish when stash size is bigger than 1. Fine for now...
+      fetch(proc)
+   end
 else
    train(trainer, sim, mdp, policy)
-end
-
-#This make Julia wait with terminating until all processes are done. However, all processes will never finish when stash size is bigger than 1. Fine for now...
-for proc in processes
-   fetch(proc)
 end
