@@ -73,6 +73,7 @@ add_samples_to_memory(estimator, state, rand(1,4), rand(1,1), mdp)
 update_network(estimator)
 save_network(estimator, "../Logs/testSave4")
 load_network(estimator, "../Logs/testSave4")
+set_stash_size(estimator,1)
 
 sleep(2)
 print("Tests passed")

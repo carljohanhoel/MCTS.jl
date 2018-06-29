@@ -46,9 +46,11 @@ function train(trainer::Trainer,
                     belief_updater::Updater=VoidUpdater()
                    )
     training_steps = trainer.training_steps
-    if trainer.show_progress
-        prog = POMDPToolbox.Progress(training_steps, "Training..." )
-    end
+    # if trainer.show_progress
+    #     prog = POMDPToolbox.Progress(training_steps, "Training..." )
+    # end
+    process_id = myid()
+    @spawnat 1 println("Training started on process "*string(process_id))
 
     nn_estimator = policy isa AZPlanner ? policy.solver.estimate_value : policy.planner.solver.estimate_value
 
@@ -107,9 +109,11 @@ function train(trainer::Trainer,
             filename = trainer.log_dir*"/"*string(step)
             save_network(nn_estimator, filename)
             n_saves+=1
+            @spawnat 1 println("Network saved on process "*string(process_id))
         end
 
         if div(step,trainer.eval_freq) > n_evals
+            @spawnat 1 println("Evaluation started on process "*string(process_id)*" after "*string(step)*" steps")
             eval_eps = 1
             if policy isa AZPlanner
                 policy.training_phase=false
@@ -130,7 +134,7 @@ function train(trainer::Trainer,
                 eval_eps+=1
             end
             open(trainer.log_dir*"/"*"evalResults.txt","a") do f
-                writedlm(f, [[step, mean(episode_reward), episode_reward]], ", ")
+                writedlm(f, [[process_id, step, mean(episode_reward), episode_reward]], ", ")
             end
             if policy isa AZPlanner
                 policy.training_phase=true
@@ -138,18 +142,80 @@ function train(trainer::Trainer,
                 policy.planner.training_phase=true
             end
             n_evals+=1
+            @spawnat 1 println("Evaluation finished on process "*string(process_id))
         end
 
-        if trainer.show_progress
-            POMDPToolbox.ProgressMeter.update!(prog, step)
+        # if trainer.show_progress
+        #     POMDPToolbox.ProgressMeter.update!(prog, step)
+        # end
+        # @spawnat 1 println("Worker "*string(process_id)*", step "*string(step))
+    end
+
+    # if trainer.show_progress
+    #     POMDPToolbox.ProgressMeter.update!(prog, training_steps)
+    # end
+
+    # if trainer.show_progress
+    #     POMDPToolbox.ProgressMeter.finish!(prog)
+    # end
+    @spawnat 1 println("Worker "*string(process_id)*" finished")
+end
+
+
+
+##############
+
+#Parallelization of training
+function train_parallel(trainer::Trainer,
+                        sim::HistoryRecorder,
+                        p::Union{POMDP,MDP},
+                        policy::Policy,
+                        belief_updater::Updater=VoidUpdater()
+                        )
+
+    n_procs = nprocs()
+    assert(n_procs>2) #First process is main and second is queue. 3 and higher are training processes.
+
+    trainer_vec = []
+    sim_vec = []
+    problem_vec = []
+    policy_vec = []
+    belief_vec = []
+    for i in 1:n_procs-2
+        push!(trainer_vec,deepcopy(trainer))
+        push!(sim_vec,deepcopy(sim))
+        push!(problem_vec,deepcopy(p))
+        push!(policy_vec,deepcopy(policy))
+        push!(belief_vec,deepcopy(belief_updater))
+    end
+    for i in 2:n_procs-2
+        #Set different RNGs
+        rng_seed = i+rand(trainer.rng,1:1000000)
+        rng_estimator=MersenneTwister(rng_seed+1)
+        rng_evaluator=MersenneTwister(rng_seed+2)
+        rng_solver=MersenneTwister(rng_seed+3)
+        rng_history=MersenneTwister(rng_seed+4)
+        rng_trainer=MersenneTwister(rng_seed+5)
+        rng_belief=MersenneTwister(rng_seed+6)
+
+        policy_vec[i].solver.rng = rng_solver
+        policy_vec[i].rng = rng_solver
+        sim_vec[i].rng = rng_history
+        trainer_vec[i].rng = rng_evaluator
+        trainer_vec[i].rng_eval = rng_trainer
+
+        if isdefined(belief_vec[i],:rng)
+            belief_vec[i].rng = rng_belief
         end
+
+        #Remove saving on all except first process (number 3)
+        trainer_vec[i].save_freq = typemax(Int)
     end
 
-    if trainer.show_progress
-        POMDPToolbox.ProgressMeter.update!(prog, training_steps)
+    set_stash_size(policy.solved_estimate, min(Sys.CPU_CORES,n_procs-2))
+
+    for i in 1:n_procs-2
+        @spawnat i+2 train(trainer_vec[i], sim_vec[i], problem_vec[i], policy_vec[i], belief_vec[i])
     end
 
-    if trainer.show_progress
-        POMDPToolbox.ProgressMeter.finish!(prog)
-    end
 end

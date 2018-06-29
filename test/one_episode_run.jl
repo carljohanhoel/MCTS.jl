@@ -1,6 +1,15 @@
 using Revise
 
-using MCTS
+parallel_version = true   #Test code in parallel mode
+# parallel_version = false
+
+if parallel_version
+   addprocs(2)
+   @everywhere using MCTS
+else
+   using MCTS
+end
+
 using POMDPs
 using POMDPModels
 using POMDPToolbox
@@ -33,10 +42,13 @@ replay_memory_max_size = 55
 training_start = 40
 estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/neural_net"
 log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS")
-estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, v_min, v_max, replay_memory_max_size, training_start)
+if parallel_version
+   @spawnat 2 run_queue(NetworkQueue(estimator_path, log_path, n_s, n_a, replay_memory_max_size, training_start, false),cmd_queue,res_queue)
+   estimator = NNEstimatorParallel(v_min, v_max)
+else
+   estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, v_min, v_max, replay_memory_max_size, training_start)
+end
 
-# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180530_022108/50001")
-# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180531_025035/45001")
 load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180616_005257_100_updates_per_episode/100001")
 
 solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=c_puct,
@@ -98,8 +110,16 @@ end
 # update_network(solver.estimate_value, new_states, new_distributions, new_values)
 
 ##
-vec_state =  MCTS.convert_state(initial_state, mdp)
-allowed_actions = [1.0, 1.0, 1.0, 1.0]
-p,v = estimator.py_class[:forward_pass](vec_state)
-println(v)
-print(p)
+if parallel_version
+   allowed_actions = ones(1,4)
+   p = estimate_distribution(estimator, initial_state, allowed_actions, mdp)
+   v = estimate_value(estimator,initial_state, mdp)
+   println(p)
+   println(v)
+else
+   vec_state =  MCTS.convert_state(initial_state, mdp)
+   allowed_actions = ones(1,4)
+   p,v = estimator.py_class[:forward_pass](vec_state)
+   println(p)
+   println(v)
+end

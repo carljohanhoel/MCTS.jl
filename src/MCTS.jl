@@ -48,6 +48,7 @@ export
     update_network,
     save_network,
     load_network,
+    set_stash_size,
     init_N,
     init_Q,
     children,
@@ -55,6 +56,7 @@ export
     isroot,
     default_action,
     train,
+    train_parallel,
     convert_state,
     state_dist
 

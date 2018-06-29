@@ -144,6 +144,10 @@ function load_network(estimator::NNEstimatorParallel, name::String)
     put!(cmd_queue,("load",myid(),nothing,nothing,nothing,nothing,nothing,name))
 end
 
+function set_stash_size(estimator::NNEstimatorParallel, stash_size::Int)
+   put!(cmd_queue,("stash_size",myid(),nothing,nothing,nothing,nothing,stash_size,nothing))
+end
+
 
 # #Needs to be defined for each problem to fit the input of the nerual network
 # function convert_state(state::Type, p::Union{POMDP,MDP})
