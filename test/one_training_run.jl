@@ -1,10 +1,11 @@
 using Revise
 
-parallel_version = true   #Test code in parallel mode
-# parallel_version = false
+# parallel_version = true   #Test code in parallel mode
+parallel_version = false
 
 if parallel_version
-   n_workers = 8
+   n_workers = 22
+   # n_workers = 8
    addprocs(n_workers+1)
    @everywhere using MCTS
 else
@@ -24,8 +25,8 @@ n_iter = 2000
 depth = 15
 c_puct = 2. #5. #10.0
 
-# simple_run = true
-simple_run = false
+simple_run = true
+# simple_run = false
 
 if simple_run
    n_iter = 20
@@ -33,7 +34,7 @@ if simple_run
    replay_memory_max_size = 200
    training_start = 100
    training_steps = Int(ceil(1000/n_workers))
-   n_network_updates_per_episode = 10
+   n_network_updates_per_episode = 100
    save_freq = Int(ceil(100/n_workers))
    eval_freq = Int(ceil(100/n_workers))
    eval_eps = Int(ceil(8/n_workers))
@@ -63,7 +64,7 @@ end
 
 sim_max_steps = 25
 
-rng_seed = 13
+rng_seed = 14
 rng_estimator=MersenneTwister(rng_seed+1)
 rng_evaluator=MersenneTwister(rng_seed+2)
 rng_solver=MersenneTwister(rng_seed+3)
@@ -113,6 +114,13 @@ solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=c_puct,
 policy = solve(solver, mdp)
 
 sim = HistoryRecorder(rng=rng_history, max_steps=sim_max_steps, show_progress=false)
+
+## Save files to log to be able to check parameters
+if !ispath(log_path)
+   mkdir(log_path)
+end
+cp(pwd()*"/test/one_training_run.jl",log_path*"/one_training_run.jl")
+cp(estimator_path*".py",log_path*"/neural_net.py")
 
 ##
 trainer = Trainer(rng=rng_trainer, rng_eval=rng_evaluator, training_steps=training_steps, n_network_updates_per_episode=n_network_updates_per_episode, save_freq=save_freq, eval_freq=eval_freq, eval_eps=eval_eps, fix_eval_eps=true, show_progress=true, log_dir=log_path)

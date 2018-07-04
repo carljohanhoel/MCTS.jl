@@ -1,5 +1,5 @@
 const cmd_queue = RemoteChannel(()->Channel{Tuple}(128))
-const res_queue = fill(RemoteChannel(()->Channel{Array{Float64}}(4)),128) #128 max number of processes
+const res_queue = fill(RemoteChannel(()->Channel{Array{Float64}}(1)),128) #128 max number of processes. (1 is number of elements each result queue can hold. Since it is sequential, 1 should be enough.)
 
 mutable struct NetworkQueue
    py_class::PyCall.PyObject
@@ -30,6 +30,7 @@ function run_queue(q::NetworkQueue, cmd_queue, res_queue)
          return
       end
       states = vcat([o[2] for o in q.stash]...)
+      if q.debug remotecall_fetch(println,1,"stash size: "*string(length(q.stash))) end
       dist, val = q.py_class[:forward_pass](states)
       for (i,obj) in enumerate(q.stash)
          kind, state, proc = obj
@@ -50,7 +51,7 @@ function run_queue(q::NetworkQueue, cmd_queue, res_queue)
 
    while true
       if q.debug remotecall_fetch(println,1,"in loop") end
-      cmd, proc, state, states, dists, vals, trigger, name = take!(cmd_queue)
+      cmd, proc, state, states, dists, vals, trigger, n_updates, name = take!(cmd_queue)
       if q.debug remotecall_fetch(println,1,string(cmd)*" "*string(state)*" "*string(proc)) end
       if cmd == "stash_size"
          process_stash(q)
@@ -63,8 +64,10 @@ function run_queue(q::NetworkQueue, cmd_queue, res_queue)
          put!(res_queue[proc],[12])
       elseif cmd == "update_network"
          process_stash(q)
-         q.update_counter += 1
-         q.py_class[:update_network]()
+         q.update_counter += n_updates
+         for i in 1:n_updates
+            q.py_class[:update_network]()
+         end
          if q.debug remotecall_fetch(println,1,"network updated") end
          put!(res_queue[proc],[13])
       elseif cmd == "predict_distribution"
@@ -97,7 +100,7 @@ estimate_value(estimator::NNEstimatorParallel, p::Union{POMDP,MDP}, state, depth
 
 function estimate_value(estimator::NNEstimatorParallel, state, p::Union{POMDP,MDP})
     converted_state = convert_state(state, p)
-    put!(cmd_queue,("predict_value",myid(),converted_state,nothing,nothing,nothing,nothing,nothing))
+    put!(cmd_queue,("predict_value",myid(),converted_state,nothing,nothing,nothing,nothing,nothing,nothing))
     value = take!(res_queue[myid()])
     value = value*(estimator.v_max-estimator.v_min)+estimator.v_min #Scale [0,1]->[v_min,v_max]
     return value[1] #Convert to scalar
@@ -105,7 +108,7 @@ end
 
 function estimate_distribution(estimator::NNEstimatorParallel, state, allowed_actions, p::Union{POMDP,MDP})
     converted_state = convert_state(state, p)
-    put!(cmd_queue,("predict_distribution",myid(),converted_state,nothing,nothing,nothing,nothing,nothing))
+    put!(cmd_queue,("predict_distribution",myid(),converted_state,nothing,nothing,nothing,nothing,nothing,nothing))
     dist = take!(res_queue[myid()])
     dist = dist.*allowed_actions
     sum_dist = sum(dist,2)
@@ -127,25 +130,25 @@ end
 function add_samples_to_memory(estimator::NNEstimatorParallel, states, dists, vals, p)
     converted_states = convert_state(states, p)
     vals = (vals-estimator.v_min)/(estimator.v_max-estimator.v_min)
-    put!(cmd_queue,("add_samples_to_memory",myid(),nothing,converted_states,dists,vals,nothing,nothing))
+    put!(cmd_queue,("add_samples_to_memory",myid(),nothing,converted_states,dists,vals,nothing,nothing,nothing))
     out = take!(res_queue[myid()])
 end
 
-function update_network(estimator::NNEstimatorParallel)
-    put!(cmd_queue,("update_network",myid(),nothing,nothing,nothing,nothing,nothing,nothing))
+function update_network(estimator::NNEstimatorParallel,n_updates::Int=1)
+    put!(cmd_queue,("update_network",myid(),nothing,nothing,nothing,nothing,nothing,n_updates,nothing))
     out = take!(res_queue[myid()])
 end
 
 function save_network(estimator::NNEstimatorParallel, name::String)
-    put!(cmd_queue,("save",myid(),nothing,nothing,nothing,nothing,nothing,name))
+    put!(cmd_queue,("save",myid(),nothing,nothing,nothing,nothing,nothing,nothing,name))
 end
 
 function load_network(estimator::NNEstimatorParallel, name::String)
-    put!(cmd_queue,("load",myid(),nothing,nothing,nothing,nothing,nothing,name))
+    put!(cmd_queue,("load",myid(),nothing,nothing,nothing,nothing,nothing,nothing,name))
 end
 
 function set_stash_size(estimator::NNEstimatorParallel, stash_size::Int)
-   put!(cmd_queue,("stash_size",myid(),nothing,nothing,nothing,nothing,stash_size,nothing))
+   put!(cmd_queue,("stash_size",myid(),nothing,nothing,nothing,nothing,stash_size,nothing,nothing))
 end
 
 

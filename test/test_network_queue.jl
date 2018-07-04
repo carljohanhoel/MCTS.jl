@@ -22,13 +22,13 @@ log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.n
 
 ##
 
-put!(cmd_queue,("predict_distribution",myid(),rand(1,n_s),nothing,nothing,nothing,nothing,nothing))
+put!(cmd_queue,("predict_distribution",myid(),rand(1,n_s),nothing,nothing,nothing,nothing,nothing,nothing))
 take!(res_queue[myid()])
-put!(cmd_queue,("predict_value",myid(),rand(1,n_s),nothing,nothing,nothing,nothing,nothing))
+put!(cmd_queue,("predict_value",myid(),rand(1,n_s),nothing,nothing,nothing,nothing,nothing,nothing))
 take!(res_queue[myid()])
 
-@spawnat 3 put!(cmd_queue,("predict_distribution",myid(),rand(1,n_s),nothing,nothing,nothing,nothing,nothing))
-@spawnat 3 put!(cmd_queue,("predict_value",myid(),rand(1,n_s),nothing,nothing,nothing,nothing,nothing))
+@spawnat 3 put!(cmd_queue,("predict_distribution",myid(),rand(1,n_s),nothing,nothing,nothing,nothing,nothing,nothing))
+@spawnat 3 put!(cmd_queue,("predict_value",myid(),rand(1,n_s),nothing,nothing,nothing,nothing,nothing,nothing))
 out1 = @spawnat 3 take!(res_queue[myid()])
 fetch(out1)
 out2 = @spawnat 3 take!(res_queue[myid()])
@@ -36,19 +36,19 @@ fetch(out2)
 
 ##
 
-@spawnat 4 put!(cmd_queue,("stash_size",myid(),nothing,nothing,nothing,nothing,1,nothing))
+@spawnat 4 put!(cmd_queue,("stash_size",myid(),nothing,nothing,nothing,nothing,1,nothing,nothing))
 
-@spawnat 4 put!(cmd_queue,("add_samples_to_memory",myid(),nothing,rand(3,n_s),rand(3,n_s),rand(3,1),nothing,nothing))
+@spawnat 4 put!(cmd_queue,("add_samples_to_memory",myid(),nothing,rand(3,n_s),rand(3,n_s),rand(3,1),nothing,nothing,nothing))
 out3 = @spawnat 4 take!(res_queue[myid()])
 fetch(out3)
 
-@spawnat 3 put!(cmd_queue,("update_network",myid(),nothing,nothing,nothing,nothing,nothing,nothing))
+@spawnat 3 put!(cmd_queue,("update_network",myid(),nothing,nothing,nothing,nothing,nothing,10,nothing))
 out3 = @spawnat 3 take!(res_queue[myid()])
 fetch(out3)
 
-out4 = @spawnat 3 put!(cmd_queue,("save",myid(),nothing,nothing,nothing,nothing,nothing,"../Logs/testSave3"))
+out4 = @spawnat 3 put!(cmd_queue,("save",myid(),nothing,nothing,nothing,nothing,nothing,nothing,"../Logs/testSave3"))
 
-out4 = @spawnat 4 put!(cmd_queue,("load",myid(),nothing,nothing,nothing,nothing,nothing,"../Logs/testSave3"))
+out4 = @spawnat 4 put!(cmd_queue,("load",myid(),nothing,nothing,nothing,nothing,nothing,nothing,"../Logs/testSave3"))
 
 ##
 #Higher level calls (queue initialized above)

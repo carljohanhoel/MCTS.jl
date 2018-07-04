@@ -58,7 +58,7 @@ function add_samples_to_memory(estimator::NNEstimator, states, dists, vals, p)
     estimator.py_class[:add_samples_to_memory](converted_states, dists, vals)
 end
 
-function update_network(estimator::NNEstimator)
+function update_network(estimator::NNEstimator, n_updates_NOT_USED_HERE::Int)
     estimator.py_class[:update_network]()
 end
 

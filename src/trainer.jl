@@ -50,7 +50,8 @@ function train(trainer::Trainer,
     #     prog = POMDPToolbox.Progress(training_steps, "Training..." )
     # end
     process_id = myid()
-    @spawnat 1 println("Training started on process "*string(process_id))
+    out = @spawnat 1 println("Training started on process "*string(process_id))
+    fetch(out)
 
     nn_estimator = policy isa AZPlanner ? policy.solver.estimate_value : policy.planner.solver.estimate_value
 
@@ -97,9 +98,7 @@ function train(trainer::Trainer,
 
         #Update network
         add_samples_to_memory(nn_estimator, new_states, new_distributions, new_values, p)
-        for i in 1:trainer.n_network_updates_per_episode
-            update_network(nn_estimator)
-        end
+        update_network(nn_estimator,trainer.n_network_updates_per_episode) #Runs update n times
 
         step += n_new_samples
 
@@ -109,11 +108,13 @@ function train(trainer::Trainer,
             filename = trainer.log_dir*"/"*string(step)
             save_network(nn_estimator, filename)
             n_saves+=1
-            @spawnat 1 println("Network saved on process "*string(process_id))
+            out = @spawnat 1 println("Network saved on process "*string(process_id)*" at "*Dates.format(Dates.now(), "yymmdd_HHMMSS"))
+            fetch(out)
         end
 
         if div(step,trainer.eval_freq) > n_evals
-            @spawnat 1 println("Evaluation started on process "*string(process_id)*" after "*string(step)*" steps")
+            out = @spawnat 1 println("Evaluation started on process "*string(process_id)*" after "*string(step)*" steps")
+            fetch(out)
             eval_eps = 1
             if policy isa AZPlanner
                 policy.training_phase=false
@@ -144,7 +145,8 @@ function train(trainer::Trainer,
                 policy.planner.training_phase=true
             end
             n_evals+=1
-            @spawnat 1 println("Evaluation finished on process "*string(process_id))
+            out = @spawnat 1 println("Evaluation finished on process "*string(process_id))
+            fetch(out)
         end
 
         # if trainer.show_progress
@@ -160,7 +162,8 @@ function train(trainer::Trainer,
     # if trainer.show_progress
     #     POMDPToolbox.ProgressMeter.finish!(prog)
     # end
-    @spawnat 1 println("Worker "*string(process_id)*" finished")
+    out = @spawnat 1 println("Worker "*string(process_id)*" finished")
+    fetch(out)
 end
 
 
@@ -214,7 +217,7 @@ function train_parallel(trainer::Trainer,
         trainer_vec[i].save_freq = typemax(Int)
     end
 
-    stash_size = min(Sys.CPU_CORES,n_procs-2)
+    stash_size = min(Sys.CPU_CORES,round(Int,(n_procs-2)/2))  #n_procs-2 = #workers. Divide by 2 to always have some active workers
     set_stash_size(policy.solved_estimate, stash_size)
 
     processes = []
