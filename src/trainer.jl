@@ -217,7 +217,9 @@ function train_parallel(trainer::Trainer,
         trainer_vec[i].save_freq = typemax(Int)
     end
 
-    stash_size = min(Sys.CPU_CORES,round(Int,(n_procs-2)/2))  #n_procs-2 = #workers. Divide by 2 to always have some active workers
+    # stash_size = min(Sys.CPU_CORES,round(Int,(n_procs-2)/2))  #n_procs-2 = #workers. Divide by 2 to always have some active workers
+    # stash_size = round(Int,(n_procs-2)/2)  #n_procs-2 = #workers. Divide by 2 to always have some active workers
+    stash_size = max(round(Int,(n_procs-2)/6),1)  #n_procs-2 = #workers. Ratio 1:6 as in nochi code
     set_stash_size(policy.solved_estimate, stash_size)
 
     processes = []

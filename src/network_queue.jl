@@ -10,14 +10,14 @@ mutable struct NetworkQueue
 end
 
 function NetworkQueue(estimator_path::String, log_path::String, n_states::Int, n_actions::Int, replay_memory_max_size::Int, training_start::Int, debug::Bool=false) #
-    py_class = initialize_queue(estimator_path, log_path, n_states, n_actions, replay_memory_max_size, training_start)
+    py_class = initialize_queue(estimator_path, log_path, n_states, n_actions, replay_memory_max_size, training_start, debug)
     return NetworkQueue(py_class, Array{Tuple}(0), 1, 0, debug)
 end
 
-function initialize_queue(estimator_path::String, log_path::String, n_states::Int, n_actions::Int, replay_memory_max_size::Int, training_start::Int)
+function initialize_queue(estimator_path::String, log_path::String, n_states::Int, n_actions::Int, replay_memory_max_size::Int, training_start::Int, debug::Bool=false)
     unshift!(PyVector(pyimport("sys")["path"]), dirname(estimator_path))
     eval(parse(string("@pyimport ", basename(estimator_path), " as python_module")))
-    py_class = python_module.NeuralNetwork(n_states, n_actions, replay_memory_max_size, training_start, log_path)
+    py_class = python_module.NeuralNetwork(n_states, n_actions, replay_memory_max_size, training_start, log_path, debug=debug)
     return py_class
 end
 
@@ -31,6 +31,7 @@ function run_queue(q::NetworkQueue, cmd_queue, res_queue)
       end
       states = vcat([o[2] for o in q.stash]...)
       if q.debug remotecall_fetch(println,1,"stash size: "*string(length(q.stash))) end
+      # remotecall_fetch(println,1,states)
       dist, val = q.py_class[:forward_pass](states)
       for (i,obj) in enumerate(q.stash)
          kind, state, proc = obj
@@ -52,13 +53,13 @@ function run_queue(q::NetworkQueue, cmd_queue, res_queue)
    while true
       if q.debug remotecall_fetch(println,1,"in loop") end
       cmd, proc, state, states, dists, vals, trigger, n_updates, name = take!(cmd_queue)
-      if q.debug remotecall_fetch(println,1,string(cmd)*" "*string(state)*" "*string(proc)) end
+      if q.debug remotecall_fetch(println,1,string(cmd)*" "*string(proc)*" "*string(state)*" "*string(trigger)*" "*string(n_updates)*" "*string(name)) end
       if cmd == "stash_size"
          process_stash(q)
          if q.debug remotecall_fetch(println,1,trigger) end
          q.trigger = trigger
       elseif cmd == "add_samples_to_memory"
-         process_stash(q)
+         # process_stash(q)
          q.py_class[:add_samples_to_memory](states, dists, vals)
          if q.debug remotecall_fetch(println,1,"memory updated") end
          put!(res_queue[proc],[12])
@@ -68,6 +69,7 @@ function run_queue(q::NetworkQueue, cmd_queue, res_queue)
          for i in 1:n_updates
             q.py_class[:update_network]()
          end
+         if q.debug remotecall_fetch(println,1,string(n_updates)*" updates") end
          if q.debug remotecall_fetch(println,1,"network updated") end
          put!(res_queue[proc],[13])
       elseif cmd == "predict_distribution"

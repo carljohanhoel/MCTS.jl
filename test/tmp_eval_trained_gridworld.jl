@@ -48,7 +48,14 @@ estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, v_min, v_max, r
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180618_195141_2000_mcts_iterations_100_updates/75001")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180620_210355_2000_mcts_searches_100_updates_5_puct/25000")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180629_024700_2000_mcts_searches_100_updates_2_puct_8_queues/5001")
-load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180629_233343_2000_mcts_iterations_100_updates_2_puct_8_queues_updated/12502")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180629_233343_2000_mcts_iterations_100_updates_2_puct_8_queues_updated/12502")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180704_215842_parallel_22workers_weights_1_1_rndseed_14_update_loop_moved/1596")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180703_185916_not_parallel_weights_1_1/40007")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180703_190208_not_parallel_weights_1_100/40011")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180621_181229_2000_mcts_iterations_100_updates_2_puct/100001")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180707_011112_parallel_1worker_weights_1_1_5puct_new_gridworld/30004")
+load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180707_011126_serial_weights_1_1_5puct_new_gridworld/40006")
+
 
 allowed_actions = [1.0, 1.0, 1.0, 1.0]
 ##

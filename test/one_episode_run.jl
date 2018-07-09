@@ -20,7 +20,7 @@ using D3Trees
 
 n_iter = 1000
 depth = 15
-c_puct = 5. #10.0
+c_puct = 5.#2.#5. #10.0
 
 rng=MersenneTwister(53)
 rng_dpw = deepcopy(rng)

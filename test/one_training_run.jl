@@ -1,11 +1,18 @@
 using Revise
 
+# debug = true
+debug = false
+
 # parallel_version = true   #Test code in parallel mode
 parallel_version = false
+
+simple_run = true
+# simple_run = false
 
 if parallel_version
    n_workers = 22
    # n_workers = 8
+   # n_workers = 1
    addprocs(n_workers+1)
    @everywhere using MCTS
 else
@@ -23,10 +30,7 @@ using D3Trees
 
 n_iter = 2000
 depth = 15
-c_puct = 2. #5. #10.0
-
-simple_run = true
-# simple_run = false
+c_puct = 5.#2. #5. #10.0
 
 if simple_run
    n_iter = 20
@@ -86,10 +90,9 @@ v_max = 10.
 estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/neural_net"
 log_name = length(ARGS)>0 ? ARGS[1] : ""
 log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS_")*log_name
-
 if parallel_version
    #Start queue on process 2
-   @spawnat 2 run_queue(NetworkQueue(estimator_path, log_path, n_s, n_a, replay_memory_max_size, training_start, false),cmd_queue,res_queue)
+   @spawnat 2 run_queue(NetworkQueue(estimator_path, log_path, n_s, n_a, replay_memory_max_size, training_start, debug),cmd_queue,res_queue)
    estimator = NNEstimatorParallel(v_min, v_max)
    sleep(3) #Wait for queue to be set up before continuing
 else
