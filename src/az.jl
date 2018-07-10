@@ -155,11 +155,12 @@ function simulate(az::AZPlanner, snode::Int)
 
     best_UCB = -Inf
     sanode = 0
-    tn = tree.total_n[snode]
+    tn = tree.total_n[snode]+1   # +1 is added to make algorithm choose the action with highest prior probability first.
     for child in shuffle(az.rng,tree.children[snode])   #Randomize in case of equal UCB values
         if tree.p[child] > 0.0   #Prior probability ==0.0 means it's a forbidden action
             n = tree.n[child]
             q = tree.q[child]
+            q = q / (1/(1-az.mdp.discount))   #Normalize q. r at every time step is assumed to be normalized to [-1,1]
             p = tree.p[child]
             c_puct = sol.exploration_constant # for clarity
             UCB = q + c_puct*p*sqrt(tn)/(1+n)

@@ -11,9 +11,10 @@ using D3Trees
 
 n_iter = 2000
 depth = 15
-ec =  100.#2.#5.#10.0
+ec =  1/20*5#100.#2.#5.#10.0
+ec_dpw = ec*20
 
-rng=MersenneTwister(62)
+rng=MersenneTwister(65)
 rng_dpw = deepcopy(rng)
 
 mdp = GridWorld(5,5,
@@ -22,13 +23,13 @@ mdp = GridWorld(5,5,
                 tp = 0.8,
                 terminals = [GridWorldState(3,3),GridWorldState(5,3),GridWorldState(5,5),GridWorldState(1,1)],
                 )
-state = GridWorldState(3,4)
+state = GridWorldState(3,3)
 
 
 n_s = length(MCTS.convert_state(state, mdp))
 n_a = n_actions(mdp)
-v_min = -10.
-v_max = 10.
+v_max = 1*1.05
+v_min = -v_max
 replay_memory_max_size = 55
 training_start = 40
 estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/neural_net"
@@ -45,7 +46,7 @@ estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, v_min, v_max, r
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180618_195141_2000_mcts_iterations_100_updates/75001")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180703_190208_not_parallel_weights_1_100/40011")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180621_181229_2000_mcts_iterations_100_updates_2_puct/100001")
-load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180707_011126_serial_weights_1_1_5puct_new_gridworld/40006")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180707_011126_serial_weights_1_1_5puct_new_gridworld/40006")
 
 solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=ec,
                 k_state=3.,
@@ -67,19 +68,19 @@ policy.training_phase = false   #if false, evaluate trained agent, no randomness
 a, ai = action_info(policy, state)
 inchromium(D3Tree(ai[:tree],init_expand=1))
 
-# ##
-# #DPW reference, just uncomment to run comparison
-#
-# solver_dpw = DPWSolver(n_iterations=n_iter, depth=depth, exploration_constant=ec,
-#                   tree_in_info=true,
-#                   k_state=3.,
-#                   alpha_state=0.2,
-#                   enable_action_pw=false,
-#                   check_repeat_state=false,
-#                   rng=rng_dpw
-#                   )
-#
-# policy_dpw = solve(solver_dpw, mdp)
-#
-# a_dpw, ai_dpw = action_info(policy_dpw, state)
-# inchromium(D3Tree(ai_dpw[:tree],init_expand=1))
+##
+#DPW reference, just uncomment to run comparison
+
+solver_dpw = DPWSolver(n_iterations=n_iter, depth=depth, exploration_constant=ec_dpw,
+                  tree_in_info=true,
+                  k_state=3.,
+                  alpha_state=0.2,
+                  enable_action_pw=false,
+                  check_repeat_state=false,
+                  rng=rng_dpw
+                  )
+
+policy_dpw = solve(solver_dpw, mdp)
+
+a_dpw, ai_dpw = action_info(policy_dpw, state)
+inchromium(D3Tree(ai_dpw[:tree],init_expand=1))

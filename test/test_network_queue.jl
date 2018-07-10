@@ -10,8 +10,8 @@ using POMDPModels
 ##
 n_s = 3
 n_a = 4
-v_min = -10.
-v_max = 10.
+v_max = 1*1.05
+v_min = -v_max
 replay_memory_max_size = 100
 training_start = 20
 estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/neural_net"

@@ -12,7 +12,7 @@ mutable struct Trainer
     rng::AbstractRNG
     rng_eval::AbstractRNG
     training_steps::Int
-    n_network_updates_per_episode::Int
+    n_network_updates_per_sample::Int
     save_freq::Int
     eval_freq::Int
     eval_eps::Int
@@ -24,7 +24,7 @@ end
 function Trainer(;rng=MersenneTwister(rand(UInt32)),
                   rng_eval=MersenneTwister(rand(UInt32)),
                   training_steps::Int=1,
-                  n_network_updates_per_episode::Int=1,
+                  n_network_updates_per_sample::Int=1,
                   save_freq::Int=Inf,
                   eval_freq::Int=Inf,
                   eval_eps::Int=1,
@@ -32,7 +32,7 @@ function Trainer(;rng=MersenneTwister(rand(UInt32)),
                   show_progress=false,
                   log_dir::String="./"
                  )
-    return Trainer(rng, rng_eval, training_steps, n_network_updates_per_episode, save_freq, eval_freq, eval_eps, fix_eval_eps, show_progress, log_dir)
+    return Trainer(rng, rng_eval, training_steps, n_network_updates_per_sample, save_freq, eval_freq, eval_eps, fix_eval_eps, show_progress, log_dir)
 end
 
 struct VoidUpdater <: Updater
@@ -98,7 +98,7 @@ function train(trainer::Trainer,
 
         #Update network
         add_samples_to_memory(nn_estimator, new_states, new_distributions, new_values, p)
-        update_network(nn_estimator,trainer.n_network_updates_per_episode) #Runs update n times
+        update_network(nn_estimator,trainer.n_network_updates_per_sample*n_new_samples) #Runs update n times
 
         step += n_new_samples
 

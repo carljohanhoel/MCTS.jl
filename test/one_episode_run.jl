@@ -1,7 +1,7 @@
 using Revise
 
-parallel_version = true   #Test code in parallel mode
-# parallel_version = false
+# parallel_version = true   #Test code in parallel mode
+parallel_version = false
 
 if parallel_version
    addprocs(2)
@@ -18,13 +18,11 @@ using D3Trees
 
 ##
 
-n_iter = 1000
+n_iter = 2000
 depth = 15
-c_puct = 5.#2.#5. #10.0
+c_puct = 1/20*5 #5.#2.#5. #10.0
 
 rng=MersenneTwister(53)
-rng_dpw = deepcopy(rng)
-
 
 mdp = GridWorld(5,5,
                 penalty=0.,
@@ -36,8 +34,8 @@ initial_state = GridWorldState(5,1)
 
 n_s = length(MCTS.convert_state(initial_state, mdp))
 n_a = n_actions(mdp)
-v_min = -10.
-v_max = 10.
+v_max = 1*1.05
+v_min = -v_max
 replay_memory_max_size = 55
 training_start = 40
 estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/neural_net"
@@ -49,7 +47,7 @@ else
    estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, v_min, v_max, replay_memory_max_size, training_start)
 end
 
-load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180616_005257_100_updates_per_episode/100001")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180616_005257_100_updates_per_episode/100001")
 
 solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=c_puct,
                k_state=3.,

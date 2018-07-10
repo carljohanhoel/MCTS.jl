@@ -3,14 +3,14 @@ using Revise
 # debug = true
 debug = false
 
-# parallel_version = true   #Test code in parallel mode
-parallel_version = false
+parallel_version = true   #Test code in parallel mode
+# parallel_version = false
 
-simple_run = true
-# simple_run = false
+# simple_run = true
+simple_run = false
 
 if parallel_version
-   n_workers = 22
+   n_workers = 20
    # n_workers = 8
    # n_workers = 1
    addprocs(n_workers+1)
@@ -30,7 +30,7 @@ using D3Trees
 
 n_iter = 2000
 depth = 15
-c_puct = 5.#2. #5. #10.0
+c_puct = 1/20*5#5.#2. #5. #10.0 (1/20 because actual normalized max for gridworld is 1/20)
 
 if simple_run
    n_iter = 20
@@ -38,7 +38,7 @@ if simple_run
    replay_memory_max_size = 200
    training_start = 100
    training_steps = Int(ceil(1000/n_workers))
-   n_network_updates_per_episode = 100
+   n_network_updates_per_sample = 20
    save_freq = Int(ceil(100/n_workers))
    eval_freq = Int(ceil(100/n_workers))
    eval_eps = Int(ceil(8/n_workers))
@@ -60,7 +60,7 @@ else
    replay_memory_max_size = 10000
    training_start = 5000 #This is used in py, so includes all workers
    training_steps = Int(ceil(100000/n_workers))
-   n_network_updates_per_episode = 100
+   n_network_updates_per_sample = 20
    save_freq = Int(ceil(5000/n_workers))
    eval_freq = Int(ceil(5000/n_workers))
    eval_eps = Int(ceil(100/n_workers))
@@ -85,8 +85,8 @@ s_initial = GridWorldState(1,1)
 
 n_s = length(MCTS.convert_state(s_initial, mdp))
 n_a = n_actions(mdp)
-v_min = -10.
-v_max = 10.
+v_max = 1*1.05 #Reward should be in range [-1,1]. Factor 1.05 helps with avoiding extreme values needed to create 1.000 in sigmoid
+v_min = -v_max
 estimator_path = "/home/cj/2018/Stanford/Code/Multilane.jl/src/neural_net"
 log_name = length(ARGS)>0 ? ARGS[1] : ""
 log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS_")*log_name
@@ -126,7 +126,7 @@ cp(pwd()*"/test/one_training_run.jl",log_path*"/one_training_run.jl")
 cp(estimator_path*".py",log_path*"/neural_net.py")
 
 ##
-trainer = Trainer(rng=rng_trainer, rng_eval=rng_evaluator, training_steps=training_steps, n_network_updates_per_episode=n_network_updates_per_episode, save_freq=save_freq, eval_freq=eval_freq, eval_eps=eval_eps, fix_eval_eps=true, show_progress=true, log_dir=log_path)
+trainer = Trainer(rng=rng_trainer, rng_eval=rng_evaluator, training_steps=training_steps, n_network_updates_per_sample=n_network_updates_per_sample, save_freq=save_freq, eval_freq=eval_freq, eval_eps=eval_eps, fix_eval_eps=true, show_progress=true, log_dir=log_path)
 if parallel_version
    processes = train_parallel(trainer, sim, mdp, policy)
 

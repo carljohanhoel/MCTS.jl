@@ -1,5 +1,5 @@
-parallel_version = true   #Test code in parallel mode
-# parallel_version = false
+# parallel_version = true   #Test code in parallel mode
+parallel_version = false
 
 if parallel_version
    addprocs(2)
@@ -19,8 +19,8 @@ vec_state = MCTS.convert_state(state, mdp)
 
 n_s = length(vec_state)
 n_a = n_actions(mdp)
-v_min = -10.
-v_max = 10.
+v_max = 1*1.05
+v_min = -v_max
 replay_memory_max_size = 55
 training_start = 40
 rng = MersenneTwister(12)
@@ -34,7 +34,7 @@ else
 end
 
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180616_005257_100_updates_per_episode/100001")
-load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180629_024700_2000_mcts_searches_100_updates_2_puct_8_queues/5001")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180629_024700_2000_mcts_searches_100_updates_2_puct_8_queues/5001")
 
 allowed_actions = ones(1,4)
 
@@ -49,7 +49,7 @@ end
 estimate_value(estimator,state,mdp)
 estimate_distribution(estimator,state, allowed_actions,mdp)
 add_samples_to_memory(estimator,[state,state],rand(2,4),rand(2,1),mdp)
-update_network(estimator)
+update_network(estimator,1)
 save_network(estimator,dirname(dirname(estimator_path))*"/Logs/ttt")
 load_network(estimator,dirname(dirname(estimator_path))*"/Logs/ttt")
 
