@@ -55,6 +55,7 @@ estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, v_min, v_max, r
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180621_181229_2000_mcts_iterations_100_updates_2_puct/100001")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180707_011112_parallel_1worker_weights_1_1_5puct_new_gridworld/30004")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180707_011126_serial_weights_1_1_5puct_new_gridworld/40006")
+load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180710_181605_serial_updated_az_weights_1_1_puct_0p25_100updates_per_sample/15001")
 
 
 allowed_actions = [1.0, 1.0, 1.0, 1.0]
@@ -82,3 +83,14 @@ for y = 5:-1:1
    println()
 end
 println(actions(mdp))
+
+
+# ##
+# for y = 1:5
+#    for x = 1:5
+#       state = GridWorldState(x,y)
+#       vec_state = MCTS.convert_state(state,mdp)
+#       p,v = estimator.py_class[:forward_pass](vec_state)
+#       println(maximum(p))
+#    end
+# end

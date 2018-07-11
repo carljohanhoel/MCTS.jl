@@ -73,7 +73,9 @@ function POMDPToolbox.action_info(p::AZPlanner, s; tree_in_info=false)
         for (i,child) in enumerate(tree.children[snode])
             N[i] = tree.n[child]
         end
-        action_distribution = (N./N_sum).^p.solver.tau
+        # action_distribution = (N./N_sum).^p.solver.tau
+        action_distribution_not_normalized = N.^(1/p.solver.tau)
+        action_distribution = action_distribution_not_normalized / sum(action_distribution_not_normalized)
         if p.training_phase
             a = sample(all_actions,Weights(action_distribution))
         else

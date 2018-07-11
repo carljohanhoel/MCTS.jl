@@ -3,8 +3,8 @@ using Revise
 # debug = true
 debug = false
 
-parallel_version = true   #Test code in parallel mode
-# parallel_version = false
+# parallel_version = true   #Test code in parallel mode
+parallel_version = false
 
 # simple_run = true
 simple_run = false
@@ -30,7 +30,8 @@ using D3Trees
 
 n_iter = 2000
 depth = 15
-c_puct = 1/20*5#5.#2. #5. #10.0 (1/20 because actual normalized max for gridworld is 1/20)
+c_puct = 1/20*10   # (1/20 because actual normalized max for gridworld is 1/20)
+tau = 1.1
 
 if simple_run
    n_iter = 20
@@ -38,7 +39,7 @@ if simple_run
    replay_memory_max_size = 200
    training_start = 100
    training_steps = Int(ceil(1000/n_workers))
-   n_network_updates_per_sample = 20
+   n_network_updates_per_sample = 100
    save_freq = Int(ceil(100/n_workers))
    eval_freq = Int(ceil(100/n_workers))
    eval_eps = Int(ceil(8/n_workers))
@@ -60,7 +61,7 @@ else
    replay_memory_max_size = 10000
    training_start = 5000 #This is used in py, so includes all workers
    training_steps = Int(ceil(100000/n_workers))
-   n_network_updates_per_sample = 20
+   n_network_updates_per_sample = 100
    save_freq = Int(ceil(5000/n_workers))
    eval_freq = Int(ceil(5000/n_workers))
    eval_eps = Int(ceil(100/n_workers))
@@ -106,6 +107,7 @@ solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=c_puct,
                k_state=3.,
                tree_in_info=false,
                alpha_state=0.2,
+               tau=tau,
                enable_action_pw=false,
                check_repeat_state=false,
                rng=rng_solver,
@@ -122,8 +124,11 @@ sim = HistoryRecorder(rng=rng_history, max_steps=sim_max_steps, show_progress=fa
 if !ispath(log_path)
    mkdir(log_path)
 end
-cp(pwd()*"/test/one_training_run.jl",log_path*"/one_training_run.jl")
-cp(estimator_path*".py",log_path*"/neural_net.py")
+mkdir(log_path*"/code")
+cp(pwd()*"/test/",log_path*"/code/test/")
+cp(pwd()*"/src/",log_path*"/code/src/")
+# cp(pwd()*"/test/one_training_run.jl",log_path*"/one_training_run.jl")
+# cp(estimator_path*".py",log_path*"/neural_net.py")
 
 ##
 trainer = Trainer(rng=rng_trainer, rng_eval=rng_evaluator, training_steps=training_steps, n_network_updates_per_sample=n_network_updates_per_sample, save_freq=save_freq, eval_freq=eval_freq, eval_eps=eval_eps, fix_eval_eps=true, show_progress=true, log_dir=log_path)

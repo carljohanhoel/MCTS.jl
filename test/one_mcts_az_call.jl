@@ -11,10 +11,10 @@ using D3Trees
 
 n_iter = 2000
 depth = 15
-ec =  1/20*5#100.#2.#5.#10.0
+ec =  1/20*5#100.#2.#5.#10.0 (1/20 because actual normalized max for gridworld is 1/20)
 ec_dpw = ec*20
 
-rng=MersenneTwister(65)
+rng=MersenneTwister(70)
 rng_dpw = deepcopy(rng)
 
 mdp = GridWorld(5,5,
@@ -23,7 +23,7 @@ mdp = GridWorld(5,5,
                 tp = 0.8,
                 terminals = [GridWorldState(3,3),GridWorldState(5,3),GridWorldState(5,5),GridWorldState(1,1)],
                 )
-state = GridWorldState(3,3)
+state = GridWorldState(3,5)
 
 
 n_s = length(MCTS.convert_state(state, mdp))
@@ -47,6 +47,7 @@ estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, v_min, v_max, r
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180703_190208_not_parallel_weights_1_100/40011")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180621_181229_2000_mcts_iterations_100_updates_2_puct/100001")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180707_011126_serial_weights_1_1_5puct_new_gridworld/40006")
+load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180710_181605_serial_updated_az_weights_1_1_puct_0p25_100updates_per_sample/15001")
 
 solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=ec,
                 k_state=3.,
