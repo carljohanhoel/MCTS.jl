@@ -1,7 +1,7 @@
 using Revise
 
-# parallel_version = true   #Test code in parallel mode
-parallel_version = false
+parallel_version = true   #Test code in parallel mode
+# parallel_version = false
 
 if parallel_version
    addprocs(2)
@@ -21,6 +21,7 @@ using D3Trees
 n_iter = 2000
 depth = 15
 c_puct = 1/20*5 #5.#2.#5. #10.0
+tau = 1.1
 
 rng=MersenneTwister(53)
 
@@ -53,6 +54,7 @@ solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=c_puct,
                k_state=3.,
                tree_in_info=true,
                alpha_state=0.2,
+               tau=tau,
                enable_action_pw=false,
                check_repeat_state=false,
                rng=rng,
@@ -83,7 +85,7 @@ new_values = Vector{Float64}(length(new_states))
 new_distributions = Array{Float64}(length(new_states),n_a)
 
 end_state = new_states[end]
-end_value = isterminal(mdp,end_state) ? 0 : estimate_value(solver.estimate_value, end_state, mdp)
+end_value = isterminal(mdp,end_state) ? 0 : estimate_value(solver.estimate_value, end_state, mdp)[1]
 new_values[end] = end_value
 value = end_value
 for (i,state) in enumerate(new_states[end-1:-1:1])
@@ -111,7 +113,7 @@ end
 if parallel_version
    allowed_actions = ones(1,4)
    p = estimate_distribution(estimator, initial_state, allowed_actions, mdp)
-   v = estimate_value(estimator,initial_state, mdp)
+   v = estimate_value(estimator,initial_state, mdp)[1]
    println(p)
    println(v)
 else

@@ -43,13 +43,13 @@ function POMDPToolbox.action_info(p::AZPlanner, s; tree_in_info=false)
             if haskey(tree.s_lookup, s)
                 snode = tree.s_lookup[s]
             else
-                v0 = estimate_value(p.solved_estimate, p.mdp, s, p.solver.depth)
+                v0 = estimate_value(p.solved_estimate, p.mdp, s, p.solver.depth)[1]
                 snode = insert_state_node!(tree, s, v0)
             end
         else
             tree = AZTree{S,A}(p.solver.n_iterations)
             p.tree = Nullable(tree)
-            v0 = estimate_value(p.solved_estimate, p.mdp, s, p.solver.depth)
+            v0 = estimate_value(p.solved_estimate, p.mdp, s, p.solver.depth)[1] #First element since could be a vector
             snode = insert_state_node!(tree, s, v0, p.solver.check_repeat_state)
         end
 
@@ -196,7 +196,7 @@ function simulate(az::AZPlanner, snode::Int)
         spnode = sol.check_repeat_state ? get(tree.s_lookup, sp, 0) : 0
 
         if spnode == 0 # there was not a state node for sp already in the tree
-            v0 = estimate_value(az.solved_estimate, az.mdp, sp, az.solver.depth)
+            v0 = estimate_value(az.solved_estimate, az.mdp, sp, az.solver.depth)[1]
             spnode = insert_state_node!(tree, sp, v0, sol.keep_tree || sol.check_repeat_state)
             new_node = true
         end

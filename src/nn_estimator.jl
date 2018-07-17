@@ -29,7 +29,7 @@ function estimate_value(estimator::NNEstimator, state, p::Union{POMDP,MDP})
     converted_state = convert_state(state, p)
     dist, value = estimator.py_class[:forward_pass](converted_state)
     value = value*(estimator.v_max-estimator.v_min)+estimator.v_min #Scale [0,1]->[v_min,v_max]
-    return value[1] #Convert to scalar
+    return value #Convert to scalar
 end
 
 function estimate_distribution(estimator::NNEstimator, state, allowed_actions, p::Union{POMDP,MDP})

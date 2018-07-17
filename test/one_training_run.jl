@@ -3,8 +3,8 @@ using Revise
 # debug = true
 debug = false
 
-# parallel_version = true   #Test code in parallel mode
-parallel_version = false
+parallel_version = true   #Test code in parallel mode
+# parallel_version = false
 
 # simple_run = true
 simple_run = false
@@ -12,6 +12,7 @@ simple_run = false
 if parallel_version
    n_workers = 20
    # n_workers = 8
+   # n_workers = 4
    # n_workers = 1
    addprocs(n_workers+1)
    @everywhere using MCTS
@@ -30,7 +31,7 @@ using D3Trees
 
 n_iter = 2000
 depth = 15
-c_puct = 1/20*10   # (1/20 because actual normalized max for gridworld is 1/20)
+c_puct = 1/20*5   # (1/20 because actual normalized max for gridworld is 1/20)
 tau = 1.1
 
 if simple_run
@@ -38,10 +39,10 @@ if simple_run
 
    replay_memory_max_size = 200
    training_start = 100
-   training_steps = Int(ceil(1000/n_workers))
-   n_network_updates_per_sample = 100
-   save_freq = Int(ceil(100/n_workers))
-   eval_freq = Int(ceil(100/n_workers))
+   training_steps = Int(ceil(1000/n_workers))*1000 ###
+   n_network_updates_per_sample = 1
+   save_freq = Int(ceil(100/n_workers))*1000 ###
+   eval_freq = Int(ceil(100/n_workers)) ###
    eval_eps = Int(ceil(8/n_workers))
 else
    # replay_memory_max_size = 100000
@@ -61,7 +62,7 @@ else
    replay_memory_max_size = 10000
    training_start = 5000 #This is used in py, so includes all workers
    training_steps = Int(ceil(100000/n_workers))
-   n_network_updates_per_sample = 100
+   n_network_updates_per_sample = 1
    save_freq = Int(ceil(5000/n_workers))
    eval_freq = Int(ceil(5000/n_workers))
    eval_eps = Int(ceil(100/n_workers))
@@ -96,6 +97,7 @@ if parallel_version
    @spawnat 2 run_queue(NetworkQueue(estimator_path, log_path, n_s, n_a, replay_memory_max_size, training_start, debug),cmd_queue,res_queue)
    estimator = NNEstimatorParallel(v_min, v_max)
    sleep(3) #Wait for queue to be set up before continuing
+   clear_queue()
 else
    estimator = NNEstimator(rng_estimator, estimator_path, log_path, n_s, n_a, v_min, v_max, replay_memory_max_size, training_start)
 end
@@ -128,7 +130,7 @@ mkdir(log_path*"/code")
 cp(pwd()*"/test/",log_path*"/code/test/")
 cp(pwd()*"/src/",log_path*"/code/src/")
 # cp(pwd()*"/test/one_training_run.jl",log_path*"/one_training_run.jl")
-# cp(estimator_path*".py",log_path*"/neural_net.py")
+cp(estimator_path*".py",log_path*"/neural_net.py")
 
 ##
 trainer = Trainer(rng=rng_trainer, rng_eval=rng_evaluator, training_steps=training_steps, n_network_updates_per_sample=n_network_updates_per_sample, save_freq=save_freq, eval_freq=eval_freq, eval_eps=eval_eps, fix_eval_eps=true, show_progress=true, log_dir=log_path)

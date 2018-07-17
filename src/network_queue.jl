@@ -1,5 +1,30 @@
+struct QueueCommand
+### Fill out
+end
+
+struct QueueResult
+   process_id::Int
+   distribution::Array{Float64}
+   value::Float64
+end
+
 const cmd_queue = RemoteChannel(()->Channel{Tuple}(128))
-const res_queue = fill(RemoteChannel(()->Channel{Array{Float64}}(1)),128) #128 max number of processes. (1 is number of elements each result queue can hold. Since it is sequential, 1 should be enough.)
+# const res_queue = fill(RemoteChannel(()->Channel{Array{Float64}}(1)),128) #128 max number of processes. (1 is number of elements each result queue can hold. Since it is sequential, 1 should be enough.)
+# const res_queue = fill(RemoteChannel(()->Channel{QueueResult}(1)),128) #128 max number of processes. (1 is number of elements each result queue can hold. Since it is sequential, 1 should be enough.)
+tmp_queue = []
+for i in 1:128
+   push!(tmp_queue,RemoteChannel(()->Channel{QueueResult}(1)))
+end
+const res_queue = tmp_queue
+
+function clear_queue()   #Something makes queue sometimes not empty at start. This function clears it.
+   for i in 1:128
+      if isready(res_queue[i])
+         out = take!(res_queue[i])
+         println(out)
+      end
+   end
+end
 
 mutable struct NetworkQueue
    py_class::PyCall.PyObject
@@ -35,10 +60,17 @@ function run_queue(q::NetworkQueue, cmd_queue, res_queue)
       dist, val = q.py_class[:forward_pass](states)
       for (i,obj) in enumerate(q.stash)
          kind, state, proc = obj
+         # if kind == 0
+         #    put!(res_queue[proc],reshape(dist[i,:], (size(dist[i,:])...,1))') #Reshape creates 1×n Array{Float32,2}
+         # else
+         #    put!(res_queue[proc],[val[i]])
+         # end
          if kind == 0
-            put!(res_queue[proc],reshape(dist[i,:], (size(dist[i,:])...,1))') #Reshape creates 1×n Array{Float32,2}
+            r = QueueResult(proc,reshape(dist[i,:], (size(dist[i,:])...,1))',11.)  #Reshape creates 1×n Array{Float32,2}
+            put!(res_queue[proc],r)
          else
-            put!(res_queue[proc],[val[i]])
+            r = QueueResult(proc,ones(1,1)*11,val[i])  #Reshape creates 1×n Array{Float32,2}
+            put!(res_queue[proc],r)
          end
       end
       q.stash = Array{Tuple}(0)
@@ -62,7 +94,9 @@ function run_queue(q::NetworkQueue, cmd_queue, res_queue)
          # process_stash(q)
          q.py_class[:add_samples_to_memory](states, dists, vals)
          if q.debug remotecall_fetch(println,1,"memory updated") end
-         put!(res_queue[proc],[12])
+         # put!(res_queue[proc],[12])
+         r = QueueResult(proc,zeros(1,1),12.)
+         put!(res_queue[proc],r)
       elseif cmd == "update_network"
          process_stash(q)
          q.update_counter += n_updates
@@ -71,7 +105,9 @@ function run_queue(q::NetworkQueue, cmd_queue, res_queue)
          end
          if q.debug remotecall_fetch(println,1,string(n_updates)*" updates") end
          if q.debug remotecall_fetch(println,1,"network updated") end
-         put!(res_queue[proc],[13])
+         # put!(res_queue[proc],[13])
+         r = QueueResult(proc,zeros(1,1),13.)
+         put!(res_queue[proc],r)
       elseif cmd == "predict_distribution"
          add(q,0,state,proc)
          if q.debug remotecall_fetch(println,1,"pred dist added") end
@@ -103,15 +139,29 @@ estimate_value(estimator::NNEstimatorParallel, p::Union{POMDP,MDP}, state, depth
 function estimate_value(estimator::NNEstimatorParallel, state, p::Union{POMDP,MDP})
     converted_state = convert_state(state, p)
     put!(cmd_queue,("predict_value",myid(),converted_state,nothing,nothing,nothing,nothing,nothing,nothing))
-    value = take!(res_queue[myid()])
+    r = take!(res_queue[myid()])
+    value = r.value
+    if value == 12. || value == 13.
+      remotecall_fetch(println,1,"in estimate_value got: "*string(r)*", process: "*string(myid()))
+    end
+    if r.process_id != myid() || r.distribution != ones(1,1)*11
+      remotecall_fetch(println,1,"in estimate_value got: "*string(r)*", process: "*string(myid()))
+   end
     value = value*(estimator.v_max-estimator.v_min)+estimator.v_min #Scale [0,1]->[v_min,v_max]
-    return value[1] #Convert to scalar
+    return value
 end
 
 function estimate_distribution(estimator::NNEstimatorParallel, state, allowed_actions, p::Union{POMDP,MDP})
     converted_state = convert_state(state, p)
     put!(cmd_queue,("predict_distribution",myid(),converted_state,nothing,nothing,nothing,nothing,nothing,nothing))
-    dist = take!(res_queue[myid()])
+    r = take!(res_queue[myid()])
+    dist = r.distribution
+    if r.value == 12 || r.value == 13.
+      remotecall_fetch(println,1,"in predict_distribution got: "*string(r)*", process: "*string(myid()))
+    end
+    if r.process_id != myid() || r.value != 11.
+      remotecall_fetch(println,1,"in predict_distribution got: "*string(r)*", process: "*string(myid()))
+   end
     dist = dist.*allowed_actions
     sum_dist = sum(dist,2)
     if any(sum_dist.==0)   #Before the network is trained, the only allowed actions could get prob 0. In that case, set equal prior prob.
@@ -134,11 +184,19 @@ function add_samples_to_memory(estimator::NNEstimatorParallel, states, dists, va
     vals = (vals-estimator.v_min)/(estimator.v_max-estimator.v_min)
     put!(cmd_queue,("add_samples_to_memory",myid(),nothing,converted_states,dists,vals,nothing,nothing,nothing))
     out = take!(res_queue[myid()])
+    if out.value != 12.
+      remotecall_fetch(println,1,"in add_samples_to_memory got: "*string(out)*", process: "*string(myid()))
+    end
+    # print("add samples to memory out: "*string(out)*", id: "*string(myid()))
 end
 
 function update_network(estimator::NNEstimatorParallel,n_updates::Int=1)
     put!(cmd_queue,("update_network",myid(),nothing,nothing,nothing,nothing,nothing,n_updates,nothing))
     out = take!(res_queue[myid()])
+    if out.value != 13.
+      remotecall_fetch(println,1,"in update_network got: "*string(out)*", process: "*string(myid()))
+    end
+    # print("update network out: "*string(out)*", id: "*string(myid()))
 end
 
 function save_network(estimator::NNEstimatorParallel, name::String)

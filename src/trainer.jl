@@ -58,42 +58,66 @@ function train(trainer::Trainer,
     n_saves = 0
     n_evals = 0
     step = 1
+
+    proc = myid()-2 ### dbg
+    vv_tmp = (proc-10)/20 ### dbg
+    # dd_tmp = rand(1,4) ### dbg
+    # dd_tmp = [0.25 0.2 0.35 0.2] ### dbg
+    dd_tmp = [proc 25-proc proc/2 (25-proc)/2] ### dbg
+    dd_tmp = dd_tmp/sum(dd_tmp) ### dbg
+    out = @spawnat 1 println(vv_tmp) ### dbg
+    fetch(out) ### dbg
+    out = @spawnat 1 println(dd_tmp/sum(dd_tmp)) ### dbg
+    fetch(out) ### dbg
     while step <= training_steps
-        #Generate initial state
-        s_initial = initial_state(p,trainer.rng)
-
-        #Simulate one episode
-        if p isa POMDP
-            initial_state_dist = state_dist(p, s_initial)
-            hist = POMDPs.simulate(sim, p, policy, belief_updater, initial_state_dist, s_initial)
+        if false #This part is just for debug. Remove later
+            n_new_samples = rand(3:12) ### dbg
+            new_states = Array{GridWorldState}(n_new_samples) ### dbg
+            for i in 1:n_new_samples ### dbg
+                new_states[i] = GridWorldState(div(proc-1,5)+1,(proc-1)%5+1) ### dbg
+            end ### dbg
+            new_values = ones(n_new_samples,1)*vv_tmp+0.5*(2*rand(n_new_samples,1)-1) ### dbg
+            new_distributions = ones(n_new_samples)*dd_tmp+0.5*rand(n_new_samples,4) ### dbg
+            new_distributions = new_distributions./sum(new_distributions,2) ### dbg
         else
-            hist = POMDPs.simulate(sim, p, policy, s_initial)
-        end
 
-        #Extract training samples
-        n_a = length(actions(p))
-        n_new_samples = length(hist.state_hist)
-        new_states = deepcopy(hist.state_hist)
-        new_values = Vector{Float64}(length(new_states))
-        new_distributions = Array{Float64}(length(new_states),n_a)
+            #Generate initial state
+            s_initial = initial_state(p,trainer.rng)
 
-        end_state = new_states[end]
-        end_value = isterminal(p,end_state) ? 0 : estimate_value(nn_estimator, end_state, p)
-        new_values[end] = end_value
-        value = end_value
-        for (i,state) in enumerate(new_states[end-1:-1:1])
-           value = hist.reward_hist[end+1-i] + p.discount*value
-           new_values[end-i] = value
-           new_distributions[i,:] = hist.ainfo_hist[i][:action_distribution]
-        end
+            #Simulate one episode
+            if p isa POMDP
+                initial_state_dist = state_dist(p, s_initial)
+                hist = POMDPs.simulate(sim, p, policy, belief_updater, initial_state_dist, s_initial)
+            else
+                hist = POMDPs.simulate(sim, p, policy, s_initial)
+            end
 
-        if isterminal(p,end_state) #If terminal state, keep value 0 and add dummy distribution, otherwise remove last sample (the simulation gives no information about it)
-           new_distributions[end,:] = ones(1,n_a)/n_a
-        else
-           pop!(new_states)
-           pop!(new_values)
-           new_distributions = new_distributions[1:end-1,:]
-           n_new_samples-=1
+            #Extract training samples
+            n_a = length(actions(p))
+            n_new_samples = length(hist.state_hist)
+            new_states = deepcopy(hist.state_hist)
+            new_values = Vector{Float64}(length(new_states))
+            new_distributions = Array{Float64}(length(new_states),n_a)
+
+            end_state = new_states[end]
+            end_value = isterminal(p,end_state) ? 0 : estimate_value(nn_estimator, end_state, p)[1]
+            new_values[end] = end_value
+            value = end_value
+            for (i,state) in enumerate(new_states[end-1:-1:1])
+               value = hist.reward_hist[end+1-i] + p.discount*value
+               new_values[end-i] = value
+               new_distributions[i,:] = hist.ainfo_hist[i][:action_distribution]
+            end
+
+            if isterminal(p,end_state) #If terminal state, keep value 0 and add dummy distribution, otherwise remove last sample (the simulation gives no information about it)
+               new_distributions[end,:] = ones(1,n_a)/n_a
+            else
+               pop!(new_states)
+               pop!(new_values)
+               new_distributions = new_distributions[1:end-1,:]
+               n_new_samples-=1
+            end
+
         end
 
         #Update network
@@ -225,6 +249,7 @@ function train_parallel(trainer::Trainer,
     processes = []
     for i in 1:n_procs-2
         out = @spawnat i+2 train(trainer_vec[i], sim_vec[i], problem_vec[i], policy_vec[i], belief_vec[i])
+        sleep(3)
         push!(processes, out)
     end
 

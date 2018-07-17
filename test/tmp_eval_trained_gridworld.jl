@@ -54,8 +54,17 @@ estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, v_min, v_max, r
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180703_190208_not_parallel_weights_1_100/40011")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180621_181229_2000_mcts_iterations_100_updates_2_puct/100001")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180707_011112_parallel_1worker_weights_1_1_5puct_new_gridworld/30004")
-# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180707_011126_serial_weights_1_1_5puct_new_gridworld/40006")
-load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180710_181605_serial_updated_az_weights_1_1_puct_0p25_100updates_per_sample/15001")
+
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180707_011126_serial_weights_1_1_5puct_new_gridworld/100004")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180710_024815_serial_updated_az_weights_1_1_puct_0p25/100000")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180710_181605_serial_updated_az_weights_1_1_puct_0p25_100updates_per_sample/80000")
+
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180711_023401_serial_updated_az_weights_1_1_puct_0p25_100updates_per_sample_tau_1p1/70002")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180711_195335_serial_updated_az_weights_1_1_puct_0p5_100updates_per_sample_tau_1p1/60011")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180712_002623_serial_updated_az_weights_1_10_puct_0p5_100updates_per_sample_tau_1p1/60003")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180714_010918_serial_updated_az_weights_1_10_puct_0p5_1updates_per_sample_tau_1p1/45006")
+
+load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180717_025049_20_workers_weights_1_10_puct_0p25_10_updates_per_sample_tau_1p1/758")
 
 
 allowed_actions = [1.0, 1.0, 1.0, 1.0]
@@ -65,7 +74,7 @@ for y = 5:-1:1
       state = GridWorldState(x,y)
       vec_state = MCTS.convert_state(state,mdp)
       v = estimate_value(estimator,state,mdp)
-      @printf("%.2f",v[1])
+      @printf("%.2f",v[1]*10)
       print(" ")
    end
    println()

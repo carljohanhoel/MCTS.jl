@@ -29,6 +29,7 @@ export
     run_queue,
     cmd_queue,
     res_queue,
+    clear_queue,
     Trainer,
     BeliefMCTSSolver,
     AbstractMCTSPlanner,
