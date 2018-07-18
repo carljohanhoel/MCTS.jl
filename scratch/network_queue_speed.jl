@@ -2,8 +2,8 @@ parallel_version = true   #Test code in parallel mode
 # parallel_version = false
 
 if parallel_version
-   n_workers = 20
-   # n_workers = 4
+   # n_workers = 20
+   n_workers = 4
    # n_workers = 2
    addprocs(n_workers+1)
    @everywhere using MCTS
@@ -104,6 +104,7 @@ function test_estimate_value_parallel(n::Int)
    # println(out)
 end
 
+#This is the test that really matters
 function test_estimate_value_parallel_2(n::Int)
    out = @spawnat mod(1,n_workers)+3 test_estimate_value(div(n,n_workers))
    for i in 2:n_workers-1
@@ -125,6 +126,7 @@ end
 @time test_estimate_value_parallel(1000)
 # @time test_estimate_value_parallel(25000)
 
+@time test_estimate_value_parallel_2(1)
 @time test_estimate_value_parallel_2(1600)
 @time test_estimate_value_parallel_2(16000)
 
@@ -149,3 +151,16 @@ end
 #
 # julia> set_stash_size(estimator,16)
 # RemoteChannel{Channel{MCTS.QueueCommand}}(1, 1, 1)
+
+
+#old queue
+# 0.884404 seconds (265.55 k allocations: 23.711 MiB, 0.56% gc time)
+#   2.296536 seconds (682.19 k allocations: 56.819 MiB, 0.50% gc time)
+#  18.446616 seconds (4.11 M allocations: 401.742 MiB, 0.21% gc time)
+#  18.155481 seconds (4.11 M allocations: 402.253 MiB, 0.29% gc time)
+#  18.785550 seconds (4.17 M allocations: 404.900 MiB, 0.27% gc time)
+
+#new queue
+# 3.101693 seconds (946.26 k allocations: 70.939 MiB, 0.71% gc time)
+# 19.948838 seconds (5.19 M allocations: 438.569 MiB, 0.34% gc time)
+# 20.162086 seconds (5.20 M allocations: 439.717 MiB, 0.39% gc time)
