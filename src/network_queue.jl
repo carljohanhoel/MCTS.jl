@@ -1,14 +1,45 @@
 struct QueueCommand
-### Fill out
+   activity::Int
+   proc_id::Int
+   state::Array{Float64,2}
+   states::Array{Float64,2}
+   dists::Array{Float64,2}
+   vals::Array{Float64,1}
+   trigger::Int
+   n_updates::Int
+   name::String
+end
+
+function QueueCommand(
+   activity::Int, #stash_size, add_samples_to_memory, update_network, predict_distribution, predict_value, save, load
+   proc_id::Int;
+   state::Array{Float64,2}=zeros(1,1),
+   states::Array{Float64,2}=zeros(1,1),
+   dists::Array{Float64,2}=zeros(1,1),
+   vals::Array{Float64,1}=zeros(1),
+   trigger::Int=0,
+   n_updates::Int=0,
+   name::String=""
+   )
+   return QueueCommand(activity, proc_id, state, states, dists, vals, trigger, n_updates, name)
 end
 
 struct QueueResult
    process_id::Int
-   distribution::Array{Float64}
+   distribution::Array{Float64,2}
    value::Float64
 end
 
-const cmd_queue = RemoteChannel(()->Channel{Tuple}(128))
+function QueueResult(
+   process_id::Int;
+   distribution::Array{Float64,2}=zeros(1,1),
+   value::Float64=0.
+   )
+   return QueueResult(process_id, distribution, value)
+end
+
+# const cmd_queue = RemoteChannel(()->Channel{Tuple}(128))
+const cmd_queue = RemoteChannel(()->Channel{QueueCommand}(128))
 # const res_queue = fill(RemoteChannel(()->Channel{Array{Float64}}(1)),128) #128 max number of processes. (1 is number of elements each result queue can hold. Since it is sequential, 1 should be enough.)
 # const res_queue = fill(RemoteChannel(()->Channel{QueueResult}(1)),128) #128 max number of processes. (1 is number of elements each result queue can hold. Since it is sequential, 1 should be enough.)
 tmp_queue = []
@@ -21,7 +52,7 @@ function clear_queue()   #Something makes queue sometimes not empty at start. Th
    for i in 1:128
       if isready(res_queue[i])
          out = take!(res_queue[i])
-         println(out)
+         println("clearing queue: "*string(out))
       end
    end
 end
@@ -58,25 +89,26 @@ function run_queue(q::NetworkQueue, cmd_queue, res_queue)
       if q.debug remotecall_fetch(println,1,"stash size: "*string(length(q.stash))) end
       # remotecall_fetch(println,1,states)
       dist, val = q.py_class[:forward_pass](states)
+      dist = Array{Float64,2}(dist) #Float32 is returned from py code
+      val = Array{Float64,2}(val)
+      if q.debug remotecall_fetch(println,1,"forward pass done") end
       for (i,obj) in enumerate(q.stash)
-         kind, state, proc = obj
+         kind, state, proc_id = obj
          # if kind == 0
          #    put!(res_queue[proc],reshape(dist[i,:], (size(dist[i,:])...,1))') #Reshape creates 1×n Array{Float32,2}
          # else
          #    put!(res_queue[proc],[val[i]])
          # end
          if kind == 0
-            r = QueueResult(proc,reshape(dist[i,:], (size(dist[i,:])...,1))',11.)  #Reshape creates 1×n Array{Float32,2}
-            put!(res_queue[proc],r)
+            put!(res_queue[proc_id],QueueResult(proc_id,distribution=reshape(dist[i,:], (size(dist[i,:])...,1))'))  #Reshape creates 1×n Array{Float32,2}
          else
-            r = QueueResult(proc,ones(1,1)*11,val[i])  #Reshape creates 1×n Array{Float32,2}
-            put!(res_queue[proc],r)
+            put!(res_queue[proc_id],QueueResult(proc_id,value=val[i]))
          end
       end
       q.stash = Array{Tuple}(0)
    end
-   function add(q::NetworkQueue, kind, state, proc)
-      push!(q.stash,(kind,state,proc))
+   function add(q::NetworkQueue, kind::Int, state::Array{Float64,2}, proc_id::Int)
+      push!(q.stash,(kind,state,proc_id))
       if length(q.stash) >= q.trigger
          process_stash(q)
       end
@@ -84,44 +116,44 @@ function run_queue(q::NetworkQueue, cmd_queue, res_queue)
 
    while true
       if q.debug remotecall_fetch(println,1,"in loop") end
-      cmd, proc, state, states, dists, vals, trigger, n_updates, name = take!(cmd_queue)
-      if q.debug remotecall_fetch(println,1,string(cmd)*" "*string(proc)*" "*string(state)*" "*string(trigger)*" "*string(n_updates)*" "*string(name)) end
-      if cmd == "stash_size"
+      # cmd, proc, state, states, dists, vals, trigger, n_updates, name = take!(cmd_queue)
+      cmd = take!(cmd_queue)
+      # if q.debug remotecall_fetch(println,1,string(cmd)*" "*string(proc)*" "*string(state)*" "*string(trigger)*" "*string(n_updates)*" "*string(name)) end
+      if q.debug remotecall_fetch(println,1,string(cmd.activity)*" "*string(cmd.proc_id)*" "*string(cmd.state)*" "*string(cmd.trigger)*" "*string(cmd.n_updates)*" "*string(cmd.name)) end
+      if cmd.activity == 1
          process_stash(q)
-         if q.debug remotecall_fetch(println,1,trigger) end
-         q.trigger = trigger
-      elseif cmd == "add_samples_to_memory"
+         if q.debug remotecall_fetch(println,1,cmd.trigger) end
+         q.trigger = cmd.trigger
+      elseif cmd.activity == 2
          # process_stash(q)
-         q.py_class[:add_samples_to_memory](states, dists, vals)
+         q.py_class[:add_samples_to_memory](cmd.states, cmd.dists, cmd.vals)
          if q.debug remotecall_fetch(println,1,"memory updated") end
          # put!(res_queue[proc],[12])
-         r = QueueResult(proc,zeros(1,1),12.)
-         put!(res_queue[proc],r)
-      elseif cmd == "update_network"
+         put!(res_queue[cmd.proc_id],QueueResult(cmd.proc_id,value=12.))
+      elseif cmd.activity == 3
          process_stash(q)
-         q.update_counter += n_updates
-         for i in 1:n_updates
+         q.update_counter += cmd.n_updates
+         for i in 1:cmd.n_updates
             q.py_class[:update_network]()
          end
-         if q.debug remotecall_fetch(println,1,string(n_updates)*" updates") end
+         if q.debug remotecall_fetch(println,1,string(cmd.n_updates)*" updates") end
          if q.debug remotecall_fetch(println,1,"network updated") end
          # put!(res_queue[proc],[13])
-         r = QueueResult(proc,zeros(1,1),13.)
-         put!(res_queue[proc],r)
-      elseif cmd == "predict_distribution"
-         add(q,0,state,proc)
+         put!(res_queue[cmd.proc_id],QueueResult(cmd.proc_id,value=13.))
+      elseif cmd.activity == 4
+         add(q,0,cmd.state,cmd.proc_id)
          if q.debug remotecall_fetch(println,1,"pred dist added") end
-      elseif cmd == "predict_value"
-         add(q,1,state,proc)
+      elseif cmd.activity == 5
+         add(q,1,cmd.state,cmd.proc_id)
          if q.debug remotecall_fetch(println,1,"pred val added") end
-      elseif cmd == "save"
+      elseif cmd.activity == 6
          process_stash(q)
-         q.py_class[:save_network](name)
-         if q.debug remotecall_fetch(println,1,"save net as "*name) end
-      elseif cmd == "load"
+         q.py_class[:save_network](cmd.name)
+         if q.debug remotecall_fetch(println,1,"save net as "*cmd.name) end
+      elseif cmd.activity == 7
          process_stash(q)
-         q.py_class[:load_network](name)
-         remotecall_fetch(println,1,"load net "*name)
+         q.py_class[:load_network](cmd.name)
+         remotecall_fetch(println,1,"load net "*cmd.name)
       else
          remotecall(println,1,"Error in cmd queue")
       end
@@ -138,13 +170,13 @@ estimate_value(estimator::NNEstimatorParallel, p::Union{POMDP,MDP}, state, depth
 
 function estimate_value(estimator::NNEstimatorParallel, state, p::Union{POMDP,MDP})
     converted_state = convert_state(state, p)
-    put!(cmd_queue,("predict_value",myid(),converted_state,nothing,nothing,nothing,nothing,nothing,nothing))
+    put!(cmd_queue,QueueCommand(5,myid(),state=converted_state))
     r = take!(res_queue[myid()])
     value = r.value
     if value == 12. || value == 13.
       remotecall_fetch(println,1,"in estimate_value got: "*string(r)*", process: "*string(myid()))
     end
-    if r.process_id != myid() || r.distribution != ones(1,1)*11
+    if r.process_id != myid() || r.distribution != zeros(1,1)
       remotecall_fetch(println,1,"in estimate_value got: "*string(r)*", process: "*string(myid()))
    end
     value = value*(estimator.v_max-estimator.v_min)+estimator.v_min #Scale [0,1]->[v_min,v_max]
@@ -153,13 +185,13 @@ end
 
 function estimate_distribution(estimator::NNEstimatorParallel, state, allowed_actions, p::Union{POMDP,MDP})
     converted_state = convert_state(state, p)
-    put!(cmd_queue,("predict_distribution",myid(),converted_state,nothing,nothing,nothing,nothing,nothing,nothing))
+    put!(cmd_queue,QueueCommand(4,myid(),state=converted_state))
     r = take!(res_queue[myid()])
     dist = r.distribution
     if r.value == 12 || r.value == 13.
       remotecall_fetch(println,1,"in predict_distribution got: "*string(r)*", process: "*string(myid()))
     end
-    if r.process_id != myid() || r.value != 11.
+    if r.process_id != myid() || r.value != 0.
       remotecall_fetch(println,1,"in predict_distribution got: "*string(r)*", process: "*string(myid()))
    end
     dist = dist.*allowed_actions
@@ -182,7 +214,7 @@ end
 function add_samples_to_memory(estimator::NNEstimatorParallel, states, dists, vals, p)
     converted_states = convert_state(states, p)
     vals = (vals-estimator.v_min)/(estimator.v_max-estimator.v_min)
-    put!(cmd_queue,("add_samples_to_memory",myid(),nothing,converted_states,dists,vals,nothing,nothing,nothing))
+    put!(cmd_queue,QueueCommand(2,myid(),states=converted_states,dists=dists,vals=vals))
     out = take!(res_queue[myid()])
     if out.value != 12.
       remotecall_fetch(println,1,"in add_samples_to_memory got: "*string(out)*", process: "*string(myid()))
@@ -191,7 +223,7 @@ function add_samples_to_memory(estimator::NNEstimatorParallel, states, dists, va
 end
 
 function update_network(estimator::NNEstimatorParallel,n_updates::Int=1)
-    put!(cmd_queue,("update_network",myid(),nothing,nothing,nothing,nothing,nothing,n_updates,nothing))
+    put!(cmd_queue,QueueCommand(3,myid(),n_updates=n_updates))
     out = take!(res_queue[myid()])
     if out.value != 13.
       remotecall_fetch(println,1,"in update_network got: "*string(out)*", process: "*string(myid()))
@@ -200,15 +232,15 @@ function update_network(estimator::NNEstimatorParallel,n_updates::Int=1)
 end
 
 function save_network(estimator::NNEstimatorParallel, name::String)
-    put!(cmd_queue,("save",myid(),nothing,nothing,nothing,nothing,nothing,nothing,name))
+    put!(cmd_queue,QueueCommand(6,myid(),name=name))
 end
 
 function load_network(estimator::NNEstimatorParallel, name::String)
-    put!(cmd_queue,("load",myid(),nothing,nothing,nothing,nothing,nothing,nothing,name))
+    put!(cmd_queue,QueueCommand(7,myid(),name=name))
 end
 
 function set_stash_size(estimator::NNEstimatorParallel, stash_size::Int)
-   put!(cmd_queue,("stash_size",myid(),nothing,nothing,nothing,nothing,stash_size,nothing,nothing))
+   put!(cmd_queue,QueueCommand(1,myid(),trigger=stash_size))
 end
 
 

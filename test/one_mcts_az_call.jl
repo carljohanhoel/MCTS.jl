@@ -81,6 +81,8 @@ policy.training_phase = false   #if false, evaluate trained agent, no randomness
 a, ai = action_info(policy, state)
 inchromium(D3Tree(ai[:tree],init_expand=1))
 
+println("Tests passed")
+
 # ##
 # #DPW reference, just uncomment to run comparison
 #

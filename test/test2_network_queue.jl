@@ -54,7 +54,7 @@ end
 
 dist = rand(rng,N_samples,n_a)
 dist = dist./sum(dist,2)
-val = 2*rand(rng,N_samples,1)-1
+val = 2*rand(rng,N_samples)-1
 
 ##
 v = estimate_value(estimator,state[1],mdp)[1]

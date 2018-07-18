@@ -25,6 +25,8 @@ export
     NNEstimator,
     NNEstimatorParallel,
     NetworkQueue,
+    QueueCommand,
+    QueueResult,
     initialize_queue,
     run_queue,
     cmd_queue,

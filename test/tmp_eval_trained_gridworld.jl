@@ -64,7 +64,8 @@ estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, v_min, v_max, r
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180712_002623_serial_updated_az_weights_1_10_puct_0p5_100updates_per_sample_tau_1p1/60003")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180714_010918_serial_updated_az_weights_1_10_puct_0p5_1updates_per_sample_tau_1p1/45006")
 
-load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180717_025049_20_workers_weights_1_10_puct_0p25_10_updates_per_sample_tau_1p1/758")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180717_025049_20_workers_weights_1_10_puct_0p25_10_updates_per_sample_tau_1p1/2512")
+load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180718_023256_20_workers_weights_1_10_puct_0p25_10_updates_per_sample_tau_1p1_stash_1_3/1750")
 
 
 allowed_actions = [1.0, 1.0, 1.0, 1.0]

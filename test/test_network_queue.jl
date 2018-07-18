@@ -19,16 +19,17 @@ log_name = length(ARGS)>0 ? ARGS[1] : ""
 log_path = "/home/cj/2018/Stanford/Code/Multilane.jl/Logs/"*Dates.format(Dates.now(), "yymmdd_HHMMSS_")*log_name
 ##
 @spawnat 2 run_queue(NetworkQueue(estimator_path, log_path, n_s, n_a, replay_memory_max_size, training_start, true),cmd_queue,res_queue)
-
+sleep(10) #Wait for queue to be set up before continuing
+clear_queue() #Something strange makes this necessary...
 ##
 
-put!(cmd_queue,("predict_distribution",myid(),rand(1,n_s),nothing,nothing,nothing,nothing,nothing,nothing))
+put!(cmd_queue,QueueCommand(4,myid(),state=rand(1,n_s)))
 take!(res_queue[myid()])
-put!(cmd_queue,("predict_value",myid(),rand(1,n_s),nothing,nothing,nothing,nothing,nothing,nothing))
+put!(cmd_queue,QueueCommand(5,myid(),state=rand(1,n_s)))
 take!(res_queue[myid()])
 
-@spawnat 3 put!(cmd_queue,("predict_distribution",myid(),rand(1,n_s),nothing,nothing,nothing,nothing,nothing,nothing))
-@spawnat 3 put!(cmd_queue,("predict_value",myid(),rand(1,n_s),nothing,nothing,nothing,nothing,nothing,nothing))
+@spawnat 3 put!(cmd_queue,QueueCommand(4,myid(),state=rand(1,n_s)))
+@spawnat 3 put!(cmd_queue,QueueCommand(5,myid(),state=rand(1,n_s)))
 out1 = @spawnat 3 take!(res_queue[myid()])
 fetch(out1)
 out2 = @spawnat 3 take!(res_queue[myid()])
@@ -36,19 +37,19 @@ fetch(out2)
 
 ##
 
-@spawnat 4 put!(cmd_queue,("stash_size",myid(),nothing,nothing,nothing,nothing,1,nothing,nothing))
+@spawnat 4 put!(cmd_queue,QueueCommand(1,myid(),trigger=1))
 
-@spawnat 4 put!(cmd_queue,("add_samples_to_memory",myid(),nothing,rand(3,n_s),rand(3,n_s),rand(3,1),nothing,nothing,nothing))
+@spawnat 4 put!(cmd_queue,QueueCommand(2,myid(),states=rand(3,n_s),dists=rand(3,n_s),vals=rand(3)))
 out3 = @spawnat 4 take!(res_queue[myid()])
 fetch(out3)
 
-@spawnat 3 put!(cmd_queue,("update_network",myid(),nothing,nothing,nothing,nothing,nothing,10,nothing))
+@spawnat 3 put!(cmd_queue,QueueCommand(3,myid(),n_updates=10))
 out3 = @spawnat 3 take!(res_queue[myid()])
 fetch(out3)
 
-out4 = @spawnat 3 put!(cmd_queue,("save",myid(),nothing,nothing,nothing,nothing,nothing,nothing,"../Logs/testSave3"))
+out4 = @spawnat 3 put!(cmd_queue,QueueCommand(6,myid(),name="../Logs/testSave3"))
 
-out4 = @spawnat 4 put!(cmd_queue,("load",myid(),nothing,nothing,nothing,nothing,nothing,nothing,"../Logs/testSave3"))
+out4 = @spawnat 4 put!(cmd_queue,QueueCommand(7,myid(),name="../Logs/testSave3"))
 
 ##
 #Higher level calls (queue initialized above)
@@ -69,7 +70,7 @@ allowed_actions = ones(1,4)
 
 estimate_distribution(estimator, state, allowed_actions, mdp)
 estimate_value(estimator, state, mdp)
-add_samples_to_memory(estimator, state, rand(1,4), rand(1,1), mdp)
+add_samples_to_memory(estimator, state, rand(1,4), rand(1), mdp)
 update_network(estimator)
 save_network(estimator, "../Logs/testSave4")
 load_network(estimator, "../Logs/testSave4")

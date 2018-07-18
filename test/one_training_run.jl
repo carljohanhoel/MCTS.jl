@@ -6,14 +6,17 @@ debug = false
 parallel_version = true   #Test code in parallel mode
 # parallel_version = false
 
-# simple_run = true
-simple_run = false
+simple_run = true
+# simple_run = false
 
 if parallel_version
    n_workers = 20
    # n_workers = 8
    # n_workers = 4
    # n_workers = 1
+   if simple_run
+      n_workers = 4
+   end
    addprocs(n_workers+1)
    @everywhere using MCTS
 else
@@ -33,6 +36,7 @@ n_iter = 2000
 depth = 15
 c_puct = 1/20*5   # (1/20 because actual normalized max for gridworld is 1/20)
 tau = 1.1
+stash_factor = 3.0 #stash_size = n_workers/stash_factor
 
 if simple_run
    n_iter = 20
@@ -133,7 +137,7 @@ cp(pwd()*"/src/",log_path*"/code/src/")
 cp(estimator_path*".py",log_path*"/neural_net.py")
 
 ##
-trainer = Trainer(rng=rng_trainer, rng_eval=rng_evaluator, training_steps=training_steps, n_network_updates_per_sample=n_network_updates_per_sample, save_freq=save_freq, eval_freq=eval_freq, eval_eps=eval_eps, fix_eval_eps=true, show_progress=true, log_dir=log_path)
+trainer = Trainer(rng=rng_trainer, rng_eval=rng_evaluator, training_steps=training_steps, n_network_updates_per_sample=n_network_updates_per_sample, save_freq=save_freq, eval_freq=eval_freq, eval_eps=eval_eps, fix_eval_eps=true, stash_factor=stash_factor, show_progress=true, log_dir=log_path)
 if parallel_version
    processes = train_parallel(trainer, sim, mdp, policy)
 

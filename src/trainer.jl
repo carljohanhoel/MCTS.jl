@@ -17,6 +17,7 @@ mutable struct Trainer
     eval_freq::Int
     eval_eps::Int
     fix_eval_eps::Bool
+    stash_factor::Float64
     show_progress::Bool
     log_dir::String
 end
@@ -29,10 +30,11 @@ function Trainer(;rng=MersenneTwister(rand(UInt32)),
                   eval_freq::Int=Inf,
                   eval_eps::Int=1,
                   fix_eval_eps::Bool=true,
+                  stash_factor::Float64=3.0,
                   show_progress=false,
                   log_dir::String="./"
                  )
-    return Trainer(rng, rng_eval, training_steps, n_network_updates_per_sample, save_freq, eval_freq, eval_eps, fix_eval_eps, show_progress, log_dir)
+    return Trainer(rng, rng_eval, training_steps, n_network_updates_per_sample, save_freq, eval_freq, eval_eps, fix_eval_eps, stash_factor, show_progress, log_dir)
 end
 
 struct VoidUpdater <: Updater
@@ -243,7 +245,10 @@ function train_parallel(trainer::Trainer,
 
     # stash_size = min(Sys.CPU_CORES,round(Int,(n_procs-2)/2))  #n_procs-2 = #workers. Divide by 2 to always have some active workers
     # stash_size = round(Int,(n_procs-2)/2)  #n_procs-2 = #workers. Divide by 2 to always have some active workers
-    stash_size = max(round(Int,(n_procs-2)/6),1)  #n_procs-2 = #workers. Ratio 1:6 as in nochi code
+    # stash_size = max(round(Int,(n_procs-2)/6),1)  #n_procs-2 = #workers. Ratio 1:6 as in nochi code
+    # stash_size = max(round(Int,(n_procs-2)/3),1)  #n_procs-2 = #workers. Ratio 1:3
+    # stash_size = max(round(Int,(n_procs-2)/1.5),1)  #n_procs-2 = #workers. Ratio 1:1.5
+    stash_size = max(round(Int,(n_procs-2)/trainer.stash_factor),1)  #n_procs-2 = #workers. Ratio 1:1.5
     set_stash_size(policy.solved_estimate, stash_size)
 
     processes = []
