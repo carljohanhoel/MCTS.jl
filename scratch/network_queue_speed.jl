@@ -2,8 +2,8 @@ parallel_version = true   #Test code in parallel mode
 # parallel_version = false
 
 if parallel_version
-   # n_workers = 20
-   n_workers = 4
+   n_workers = 20
+   # n_workers = 4
    # n_workers = 2
    addprocs(n_workers+1)
    @everywhere using MCTS
@@ -91,7 +91,7 @@ end
 @time test_update_network(100)
 
 ##
-stash_size = min(4,n_workers)
+stash_size = min(13,n_workers)
 set_stash_size(estimator,stash_size)
 
 function test_estimate_value_parallel(n::Int)
@@ -110,7 +110,7 @@ function test_estimate_value_parallel_2(n::Int)
    for i in 2:n_workers-1
       @spawnat mod(i,n_workers)+3 test_estimate_value(div(n,n_workers))
    end
-   @spawnat mod(n,n_workers)+3 test_estimate_value(div(n,n_workers))
+   out = @spawnat mod(n,n_workers)+3 test_estimate_value(div(n,n_workers))
    # #Below to make sure all workers can finish (does not quite work...)
    # @spawnat mod(1,n_workers)+3 test_estimate_value(1)
    # for i in 2:n_workers-1
@@ -153,14 +153,24 @@ end
 # RemoteChannel{Channel{MCTS.QueueCommand}}(1, 1, 1)
 
 
-#old queue
+#old queue, 4 workers, 4 stash size
 # 0.884404 seconds (265.55 k allocations: 23.711 MiB, 0.56% gc time)
 #   2.296536 seconds (682.19 k allocations: 56.819 MiB, 0.50% gc time)
 #  18.446616 seconds (4.11 M allocations: 401.742 MiB, 0.21% gc time)
 #  18.155481 seconds (4.11 M allocations: 402.253 MiB, 0.29% gc time)
 #  18.785550 seconds (4.17 M allocations: 404.900 MiB, 0.27% gc time)
+#20 workers, 13 stash size
+# 1.122411 seconds (408.18 k allocations: 41.992 MiB, 0.73% gc time)
+# 10.531167 seconds (4.11 M allocations: 422.885 MiB, 0.42% gc time)
+# 10.818520 seconds (4.22 M allocations: 427.842 MiB, 0.50% gc time)
 
-#new queue
+
+
+#new queue with pycall, 4 workers, 4 stash size
 # 3.101693 seconds (946.26 k allocations: 70.939 MiB, 0.71% gc time)
 # 19.948838 seconds (5.19 M allocations: 438.569 MiB, 0.34% gc time)
 # 20.162086 seconds (5.20 M allocations: 439.717 MiB, 0.39% gc time)
+#20 workers, 13 stash size
+# 1.444715 seconds (526.30 k allocations: 47.317 MiB, 0.66% gc time)
+# 13.791815 seconds (5.18 M allocations: 465.862 MiB, 0.52% gc time)
+# 14.247861 seconds (5.19 M allocations: 466.926 MiB, 0.60% gc time)

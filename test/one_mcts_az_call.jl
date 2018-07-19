@@ -15,7 +15,7 @@ ec =  1/20*5#100.#2.#5.#10.0 (1/20 because actual normalized max for gridworld i
 ec_dpw = ec*20
 tau = 1.1
 
-rng=MersenneTwister(72)
+rng=MersenneTwister(78)
 rng_dpw = deepcopy(rng)
 
 mdp = GridWorld(5,5,
@@ -24,7 +24,7 @@ mdp = GridWorld(5,5,
                 tp = 0.8,
                 terminals = [GridWorldState(3,3),GridWorldState(5,3),GridWorldState(5,5),GridWorldState(1,1)],
                 )
-state = GridWorldState(5,4)
+state = GridWorldState(5,5)
 
 
 n_s = length(MCTS.convert_state(state, mdp))
@@ -52,13 +52,15 @@ estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, v_min, v_max, r
 
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180707_011126_serial_weights_1_1_5puct_new_gridworld/100004")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180710_024815_serial_updated_az_weights_1_1_puct_0p25/100000")
-load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180710_181605_serial_updated_az_weights_1_1_puct_0p25_100updates_per_sample/80000")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180710_181605_serial_updated_az_weights_1_1_puct_0p25_100updates_per_sample/80000")
 
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180711_023401_serial_updated_az_weights_1_1_puct_0p25_100updates_per_sample_tau_1p1/70002")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180711_195335_serial_updated_az_weights_1_1_puct_0p5_100updates_per_sample_tau_1p1/60011")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180712_002623_serial_updated_az_weights_1_10_puct_0p5_100updates_per_sample_tau_1p1/60003")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180714_010918_serial_updated_az_weights_1_10_puct_0p5_1updates_per_sample_tau_1p1/45006")
 
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180717_025049_20_workers_weights_1_10_puct_0p25_10_updates_per_sample_tau_1p1/2756")
+load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180718_180800_20_workers_weights_1_10_puct_0p25_10_updates_per_sample_tau_1p1_stash_1_1p5/3507")
 
 solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=ec,
                 k_state=3.,

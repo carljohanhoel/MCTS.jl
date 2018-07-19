@@ -1,17 +1,17 @@
 __precompile__()
 module MCTS
 
-using POMDPs
-using POMDPToolbox
+using POMDPs #27 MB
+using POMDPToolbox #23 MB
 
-using PyCall
-using Distributions
-using StatsBase
-using JLD   #ZZZZ tmp, onl for debuggin, remove
+using PyCall #18 MB
+using Distributions #1 MB
+using StatsBase #0 MB
+# using JLD   #ZZZZ tmp, onl for debuggin, remove #16 MB
 
-using Compat
-using Blink
-using CPUTime
+using Compat #0 MB
+using Blink #2 MB
+using CPUTime #0 MB
 
 export
     MCTSSolver,
