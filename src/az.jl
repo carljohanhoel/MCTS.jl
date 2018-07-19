@@ -69,9 +69,11 @@ function POMDPToolbox.action_info(p::AZPlanner, s; tree_in_info=false)
 
         all_actions = actions(p.mdp)   #Note, action nodes in the tree have the same order as here
         N = zeros(length(all_actions))
+        Q = zeros(length(all_actions))
         N_sum = tree.total_n[snode]
         for (i,child) in enumerate(tree.children[snode])
             N[i] = tree.n[child]
+            Q[i] = tree.q[child]
         end
         # action_distribution = (N./N_sum).^p.solver.tau
         action_distribution_not_normalized = N.^(1/p.solver.tau)
@@ -81,8 +83,8 @@ function POMDPToolbox.action_info(p::AZPlanner, s; tree_in_info=false)
         else
             a = all_actions[indmax(action_distribution)]
         end
-
         info[:action_distribution] = action_distribution
+        info[:q_values] = Q
 
     catch ex
         a = convert(action_type(p.mdp), default_action(p.solver.default_action, p.mdp, s, ex))

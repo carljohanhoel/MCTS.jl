@@ -1,4 +1,4 @@
-using Revise
+using Revise #21 MB ###### Comment for real runs to free RAM
 
 # debug = true
 debug = false
@@ -6,8 +6,8 @@ debug = false
 parallel_version = true   #Test code in parallel mode
 # parallel_version = false
 
-simple_run = true
-# simple_run = false
+# simple_run = true
+simple_run = false
 
 if parallel_version
    n_workers = 20
@@ -36,7 +36,8 @@ n_iter = 2000
 depth = 15
 c_puct = 1/20*5   # (1/20 because actual normalized max for gridworld is 1/20)
 tau = 1.1
-stash_factor = 3.0 #stash_size = n_workers/stash_factor
+stash_factor = 1.5 #stash_size = n_workers/stash_factor
+noise_dirichlet = 1.0
 
 if simple_run
    n_iter = 20
@@ -119,7 +120,7 @@ solver = AZSolver(n_iterations=n_iter, depth=depth, exploration_constant=c_puct,
                rng=rng_solver,
                estimate_value=estimator,
                init_P=estimator,
-               noise_dirichlet = 4,
+               noise_dirichlet = noise_dirichlet,
                noise_eps = 0.25
                )
 policy = solve(solver, mdp)

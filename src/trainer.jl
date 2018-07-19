@@ -67,10 +67,10 @@ function train(trainer::Trainer,
     # dd_tmp = [0.25 0.2 0.35 0.2] ### dbg
     dd_tmp = [proc 25-proc proc/2 (25-proc)/2] ### dbg
     dd_tmp = dd_tmp/sum(dd_tmp) ### dbg
-    out = @spawnat 1 println(vv_tmp) ### dbg
-    fetch(out) ### dbg
-    out = @spawnat 1 println(dd_tmp/sum(dd_tmp)) ### dbg
-    fetch(out) ### dbg
+    # out = @spawnat 1 println(vv_tmp) ### dbg
+    # fetch(out) ### dbg
+    # out = @spawnat 1 println(dd_tmp/sum(dd_tmp)) ### dbg
+    # fetch(out) ### dbg
     while step <= training_steps
         if false #This part is just for debug. Remove later
             n_new_samples = rand(3:12) ### dbg
@@ -78,11 +78,10 @@ function train(trainer::Trainer,
             for i in 1:n_new_samples ### dbg
                 new_states[i] = GridWorldState(div(proc-1,5)+1,(proc-1)%5+1) ### dbg
             end ### dbg
-            new_values = ones(n_new_samples,1)*vv_tmp+0.5*(2*rand(n_new_samples,1)-1) ### dbg
+            new_z_values = ones(n_new_samples,1)*vv_tmp+0.5*(2*rand(n_new_samples,1)-1) ### dbg
             new_distributions = ones(n_new_samples)*dd_tmp+0.5*rand(n_new_samples,4) ### dbg
             new_distributions = new_distributions./sum(new_distributions,2) ### dbg
         else
-
             #Generate initial state
             s_initial = initial_state(p,trainer.rng)
 
@@ -96,30 +95,38 @@ function train(trainer::Trainer,
 
             #Extract training samples
             n_a = length(actions(p))
+            all_actions = actions(policy.mdp)
             n_new_samples = length(hist.state_hist)
             new_states = deepcopy(hist.state_hist)
-            new_values = Vector{Float64}(length(new_states))
+            new_z_values = Vector{Float64}(length(new_states))
+            new_q_values = Vector{Float64}(length(new_states))
             new_distributions = Array{Float64}(length(new_states),n_a)
-
+            ##
             end_state = new_states[end]
             end_value = isterminal(p,end_state) ? 0 : estimate_value(nn_estimator, end_state, p)[1]
-            new_values[end] = end_value
+            new_z_values[end] = end_value
             value = end_value
-            for (i,state) in enumerate(new_states[end-1:-1:1])
+            new_q_values[end] = end_value
+            ## for (i,state) in enumerate(new_states[end-1:-1:1])
+            for i in 1:length(new_states)-1
                value = hist.reward_hist[end+1-i] + p.discount*value
-               new_values[end-i] = value
-               new_distributions[i,:] = hist.ainfo_hist[i][:action_distribution]
+               new_z_values[end-i] = value
+               new_distributions[end-i,:] = hist.ainfo_hist[end+1-i][:action_distribution]
+               a_idx = findfirst(all_actions,hist.action_hist[end+1-i])
+               new_q_values[end-i] = hist.ainfo_hist[end+1-i][:q_values][a_idx]
             end
 
             if isterminal(p,end_state) #If terminal state, keep value 0 and add dummy distribution, otherwise remove last sample (the simulation gives no information about it)
                new_distributions[end,:] = ones(1,n_a)/n_a
             else
                pop!(new_states)
-               pop!(new_values)
+               pop!(new_z_values)
+               pop!(new_q_values)
                new_distributions = new_distributions[1:end-1,:]
                n_new_samples-=1
             end
-
+            # new_values = new_z_values
+            new_values = (new_z_values+new_q_values)/2
         end
 
         #Update network
