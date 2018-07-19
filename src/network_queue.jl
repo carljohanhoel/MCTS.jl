@@ -24,21 +24,16 @@ function QueueCommand(
    return QueueCommand(activity, proc_id, state, states, dists, vals, trigger, n_updates, name)
 end
 
-# struct QueueResult
-#    process_id::Int
-#    distribution::Array{Float64,2}
-#    value::Float64
-# end
 struct QueueResult
    process_id::Int
-   distribution::PyCall.PyVector{PyCall.PyObject}
-   value::PyCall.PyVector{PyCall.PyObject}
+   distribution::Array{Float64,2}
+   value::Float64
 end
 
 function QueueResult(
    process_id::Int;
-   distribution::PyCall.PyVector{PyCall.PyObject}=PyVector([PyObject([0])]),
-   value::PyCall.PyVector{PyCall.PyObject}=PyVector([PyObject([0])])
+   distribution::Array{Float64,2}=zeros(1,1),
+   value::Float64=0.
    )
    return QueueResult(process_id, distribution, value)
 end
@@ -93,23 +88,22 @@ function run_queue(q::NetworkQueue, cmd_queue, res_queue)
       states = vcat([o[2] for o in q.stash]...)
       if q.debug remotecall_fetch(println,1,"stash size: "*string(length(q.stash))) end
       # remotecall_fetch(println,1,states)
-      py_object = pycall(q.py_class[:forward_pass],PyObject,states)
+      dist, val = q.py_class[:forward_pass](states)
+      dist = Array{Float64,2}(dist) #Float32 is returned from py code
+      val = Array{Float64,2}(val)
       if q.debug remotecall_fetch(println,1,"forward pass done") end
-      if q.debug remotecall_fetch(println,1,py_object) end
       for (i,obj) in enumerate(q.stash)
          kind, state, proc_id = obj
          # if kind == 0
-         #    put!(res_queue[proc_id],QueueResult(proc_id,distribution=reshape(dist[i,:], (size(dist[i,:])...,1))'))  #Reshape creates 1×n Array{Float32,2}
+         #    put!(res_queue[proc],reshape(dist[i,:], (size(dist[i,:])...,1))') #Reshape creates 1×n Array{Float32,2}
          # else
-         #    put!(res_queue[proc_id],QueueResult(proc_id,value=val[i]))
+         #    put!(res_queue[proc],[val[i]])
          # end
-         if q.debug remotecall_fetch(println,1,"before putting in queue") end
          if kind == 0
-            put!(res_queue[proc_id],QueueResult(proc_id,distribution=get(py_object,PyVector{PyObject},0)))
+            put!(res_queue[proc_id],QueueResult(proc_id,distribution=reshape(dist[i,:], (size(dist[i,:])...,1))'))  #Reshape creates 1×n Array{Float32,2}
          else
-            put!(res_queue[proc_id],QueueResult(proc_id,value=get(py_object,PyVector{PyObject},1)))
+            put!(res_queue[proc_id],QueueResult(proc_id,value=val[i]))
          end
-         if q.debug remotecall_fetch(println,1,"after putting in queue") end
       end
       q.stash = Array{Tuple}(0)
    end
@@ -135,7 +129,7 @@ function run_queue(q::NetworkQueue, cmd_queue, res_queue)
          q.py_class[:add_samples_to_memory](cmd.states, cmd.dists, cmd.vals)
          if q.debug remotecall_fetch(println,1,"memory updated") end
          # put!(res_queue[proc],[12])
-         put!(res_queue[cmd.proc_id],QueueResult(cmd.proc_id,value=PyVector([PyObject([12.])])))
+         put!(res_queue[cmd.proc_id],QueueResult(cmd.proc_id,value=12.))
       elseif cmd.activity == 3
          process_stash(q)
          q.update_counter += cmd.n_updates
@@ -145,7 +139,7 @@ function run_queue(q::NetworkQueue, cmd_queue, res_queue)
          if q.debug remotecall_fetch(println,1,string(cmd.n_updates)*" updates") end
          if q.debug remotecall_fetch(println,1,"network updated") end
          # put!(res_queue[proc],[13])
-         put!(res_queue[cmd.proc_id],QueueResult(cmd.proc_id,value=PyVector([PyObject([13.])])))
+         put!(res_queue[cmd.proc_id],QueueResult(cmd.proc_id,value=13.))
       elseif cmd.activity == 4
          add(q,0,cmd.state,cmd.proc_id)
          if q.debug remotecall_fetch(println,1,"pred dist added") end
@@ -178,14 +172,13 @@ function estimate_value(estimator::NNEstimatorParallel, state, p::Union{POMDP,MD
     converted_state = convert_state(state, p)
     put!(cmd_queue,QueueCommand(5,myid(),state=converted_state))
     r = take!(res_queue[myid()])
-    value = convert(Float64,r.value[1])
-    distribution = convert(Array{Float64},r.distribution[1])
+    value = r.value
     if value == 12. || value == 13.
       remotecall_fetch(println,1,"in estimate_value got: "*string(r)*", process: "*string(myid()))
     end
-    if r.process_id != myid() || distribution != [0.0]
-       remotecall_fetch(println,1,"in estimate_value got: "*string(r)*", process: "*string(myid()))
-    end
+    if r.process_id != myid() || r.distribution != zeros(1,1)
+      remotecall_fetch(println,1,"in estimate_value got: "*string(r)*", process: "*string(myid()))
+   end
     value = value*(estimator.v_max-estimator.v_min)+estimator.v_min #Scale [0,1]->[v_min,v_max]
     return value
 end
@@ -194,13 +187,11 @@ function estimate_distribution(estimator::NNEstimatorParallel, state, allowed_ac
     converted_state = convert_state(state, p)
     put!(cmd_queue,QueueCommand(4,myid(),state=converted_state))
     r = take!(res_queue[myid()])
-    tmp = convert(Array{Float64},r.distribution[1])
-    dist = reshape(tmp, (size(tmp)...,1))'
-    value = convert(Float64,r.value[1])
-    if value == 12 || value == 13.
+    dist = r.distribution
+    if r.value == 12 || r.value == 13.
       remotecall_fetch(println,1,"in predict_distribution got: "*string(r)*", process: "*string(myid()))
     end
-   if r.process_id != myid() || value != 0
+    if r.process_id != myid() || r.value != 0.
       remotecall_fetch(println,1,"in predict_distribution got: "*string(r)*", process: "*string(myid()))
    end
     dist = dist.*allowed_actions
@@ -225,8 +216,7 @@ function add_samples_to_memory(estimator::NNEstimatorParallel, states, dists, va
     vals = (vals-estimator.v_min)/(estimator.v_max-estimator.v_min)
     put!(cmd_queue,QueueCommand(2,myid(),states=converted_states,dists=dists,vals=vals))
     out = take!(res_queue[myid()])
-    value = convert(Float64,out.value[1])
-    if value != 12.
+    if out.value != 12.
       remotecall_fetch(println,1,"in add_samples_to_memory got: "*string(out)*", process: "*string(myid()))
     end
     # print("add samples to memory out: "*string(out)*", id: "*string(myid()))
@@ -235,8 +225,7 @@ end
 function update_network(estimator::NNEstimatorParallel,n_updates::Int=1)
     put!(cmd_queue,QueueCommand(3,myid(),n_updates=n_updates))
     out = take!(res_queue[myid()])
-    value = convert(Float64,out.value[1])
-    if value != 13.
+    if out.value != 13.
       remotecall_fetch(println,1,"in update_network got: "*string(out)*", process: "*string(myid()))
     end
     # print("update network out: "*string(out)*", id: "*string(myid()))
