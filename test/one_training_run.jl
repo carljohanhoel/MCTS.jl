@@ -6,11 +6,11 @@ debug = false
 parallel_version = true   #Test code in parallel mode
 # parallel_version = false
 
-# simple_run = true
-simple_run = false
+simple_run = true
+# simple_run = false
 
 if parallel_version
-   n_workers = 20
+   n_workers = 50
    # n_workers = 8
    # n_workers = 4
    # n_workers = 1
@@ -66,7 +66,7 @@ else
    # eval_eps = 100
    replay_memory_max_size = 10000
    training_start = 5000 #This is used in py, so includes all workers
-   training_steps = Int(ceil(100000/n_workers))
+   training_steps = Int(ceil(1000000/n_workers))
    n_network_updates_per_sample = 1
    save_freq = Int(ceil(5000/n_workers))
    eval_freq = Int(ceil(5000/n_workers))

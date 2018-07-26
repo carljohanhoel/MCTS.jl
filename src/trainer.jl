@@ -61,73 +61,52 @@ function train(trainer::Trainer,
     n_evals = 0
     step = 1
 
-    proc = myid()-2 ### dbg
-    vv_tmp = (proc-10)/20 ### dbg
-    # dd_tmp = rand(1,4) ### dbg
-    # dd_tmp = [0.25 0.2 0.35 0.2] ### dbg
-    dd_tmp = [proc 25-proc proc/2 (25-proc)/2] ### dbg
-    dd_tmp = dd_tmp/sum(dd_tmp) ### dbg
-    # out = @spawnat 1 println(vv_tmp) ### dbg
-    # fetch(out) ### dbg
-    # out = @spawnat 1 println(dd_tmp/sum(dd_tmp)) ### dbg
-    # fetch(out) ### dbg
     while step <= training_steps
-        if false #This part is just for debug. Remove later
-            n_new_samples = rand(3:12) ### dbg
-            new_states = Array{GridWorldState}(n_new_samples) ### dbg
-            for i in 1:n_new_samples ### dbg
-                new_states[i] = GridWorldState(div(proc-1,5)+1,(proc-1)%5+1) ### dbg
-            end ### dbg
-            new_z_values = ones(n_new_samples,1)*vv_tmp+0.5*(2*rand(n_new_samples,1)-1) ### dbg
-            new_distributions = ones(n_new_samples)*dd_tmp+0.5*rand(n_new_samples,4) ### dbg
-            new_distributions = new_distributions./sum(new_distributions,2) ### dbg
+        #Generate initial state
+        s_initial = initial_state(p,trainer.rng)
+
+        #Simulate one episode
+        if p isa POMDP
+            initial_state_dist = state_dist(p, s_initial)
+            hist = POMDPs.simulate(sim, p, policy, belief_updater, initial_state_dist, s_initial)
         else
-            #Generate initial state
-            s_initial = initial_state(p,trainer.rng)
-
-            #Simulate one episode
-            if p isa POMDP
-                initial_state_dist = state_dist(p, s_initial)
-                hist = POMDPs.simulate(sim, p, policy, belief_updater, initial_state_dist, s_initial)
-            else
-                hist = POMDPs.simulate(sim, p, policy, s_initial)
-            end
-
-            #Extract training samples
-            n_a = length(actions(p))
-            all_actions = actions(policy.mdp)
-            n_new_samples = length(hist.state_hist)
-            new_states = deepcopy(hist.state_hist)
-            new_z_values = Vector{Float64}(length(new_states))
-            new_q_values = Vector{Float64}(length(new_states))
-            new_distributions = Array{Float64}(length(new_states),n_a)
-            ##
-            end_state = new_states[end]
-            end_value = isterminal(p,end_state) ? 0 : estimate_value(nn_estimator, end_state, p)[1]
-            new_z_values[end] = end_value
-            value = end_value
-            new_q_values[end] = end_value
-            ## for (i,state) in enumerate(new_states[end-1:-1:1])
-            for i in 1:length(new_states)-1
-               value = hist.reward_hist[end+1-i] + p.discount*value
-               new_z_values[end-i] = value
-               new_distributions[end-i,:] = hist.ainfo_hist[end+1-i][:action_distribution]
-               a_idx = findfirst(all_actions,hist.action_hist[end+1-i])
-               new_q_values[end-i] = hist.ainfo_hist[end+1-i][:q_values][a_idx]
-            end
-
-            if isterminal(p,end_state) #If terminal state, keep value 0 and add dummy distribution, otherwise remove last sample (the simulation gives no information about it)
-               new_distributions[end,:] = ones(1,n_a)/n_a
-            else
-               pop!(new_states)
-               pop!(new_z_values)
-               pop!(new_q_values)
-               new_distributions = new_distributions[1:end-1,:]
-               n_new_samples-=1
-            end
-            # new_values = new_z_values
-            new_values = (new_z_values+new_q_values)/2
+            hist = POMDPs.simulate(sim, p, policy, s_initial)
         end
+
+        #Extract training samples
+        n_a = length(actions(p))
+        all_actions = actions(policy.mdp)
+        n_new_samples = length(hist.state_hist)
+        new_states = deepcopy(hist.state_hist)
+        new_z_values = Vector{Float64}(length(new_states))
+        new_q_values = Vector{Float64}(length(new_states))
+        new_distributions = Array{Float64}(length(new_states),n_a)
+        ##
+        end_state = new_states[end]
+        end_value = isterminal(p,end_state) ? 0 : estimate_value(nn_estimator, end_state, p)[1]
+        new_z_values[end] = end_value
+        value = end_value
+        new_q_values[end] = end_value
+        ## for (i,state) in enumerate(new_states[end-1:-1:1])
+        for i in 1:length(new_states)-1
+           value = hist.reward_hist[end+1-i] + p.discount*value
+           new_z_values[end-i] = value
+           new_distributions[end-i,:] = hist.ainfo_hist[end+1-i][:action_distribution]
+           a_idx = findfirst(all_actions,hist.action_hist[end+1-i])
+           new_q_values[end-i] = hist.ainfo_hist[end+1-i][:q_values][a_idx]
+        end
+
+        if isterminal(p,end_state) #If terminal state, keep value 0 and add dummy distribution, otherwise remove last sample (the simulation gives no information about it)
+           new_distributions[end,:] = ones(1,n_a)/n_a
+        else
+           pop!(new_states)
+           pop!(new_z_values)
+           pop!(new_q_values)
+           new_distributions = new_distributions[1:end-1,:]
+           n_new_samples-=1
+        end
+        # new_values = new_z_values
+        new_values = (new_z_values+new_q_values)/2
 
         #Update network
         add_samples_to_memory(nn_estimator, new_states, new_distributions, new_values, p)
@@ -157,6 +136,7 @@ function train(trainer::Trainer,
             rng = trainer.fix_eval_eps ? copy(trainer.rng_eval) : trainer.rng_eval   #if fix_eval, keep rng constant to always evaluate the same set of episodes
             episode_reward = []
             episode_discounted_reward = []
+            log = []
             while eval_eps <= trainer.eval_eps
                 s_initial = initial_eval_state(p, rng)
                 if p isa POMDP
@@ -167,10 +147,14 @@ function train(trainer::Trainer,
                 end
                 push!(episode_reward, sum(hist.reward_hist))
                 push!(episode_discounted_reward, sum(hist.reward_hist)*p.discount^(length(hist.reward_hist)-1))
+                push!(log, create_eval_log(p,hist, process_id, step))
                 eval_eps+=1
             end
-            open(trainer.log_dir*"/"*"evalResults.txt","a") do f
-                writedlm(f, [[process_id, step, mean(episode_reward), mean(episode_discounted_reward), episode_reward, episode_discounted_reward]], ", ")
+            open(trainer.log_dir*"/"*"evalResults2.txt","a") do f
+                writedlm(f, log, " ")
+            end
+            open(trainer.log_dir*"/"*"evalResults.txt","a") do f   #This is deprecated and should be removed in the future
+                writedlm(f, [[process_id, step, mean(episode_reward), mean(episode_discounted_reward), episode_reward, episode_discounted_reward]], " ")
             end
             if policy isa AZPlanner
                 policy.training_phase=true
@@ -228,7 +212,7 @@ function train_parallel(trainer::Trainer,
     end
     for i in 2:n_procs-2
         #Set different RNGs
-        rng_seed = i+rand(trainer.rng,1:1000000)
+        rng_seed = 342*i+630 #rand(trainer.rng,1:1000000)
         rng_estimator=MersenneTwister(rng_seed+1)
         rng_evaluator=MersenneTwister(rng_seed+2)
         rng_solver=MersenneTwister(rng_seed+3)
@@ -266,4 +250,15 @@ function train_parallel(trainer::Trainer,
     end
 
     return processes
+end
+
+
+
+function create_eval_log(p::Union{MDP,POMDP},hist::Union{POMDPToolbox.MDPHistory,POMDPToolbox.POMDPHistory}, process_id::Int, step::Int)
+    log = []
+    push!(log,process_id)
+    push!(log,step)
+    push!(log, sum(hist.reward_hist))
+    push!(log, sum(hist.reward_hist)*p.discount^(length(hist.reward_hist)-1)) #This is only valid for GridWorld, where only reward is the last one
+    return log'
 end

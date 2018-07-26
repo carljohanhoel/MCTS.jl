@@ -61,7 +61,8 @@ export
     train,
     train_parallel,
     convert_state,
-    state_dist
+    state_dist,
+    create_eval_log
 
 export
     AbstractStateNode,

@@ -66,7 +66,9 @@ estimator = NNEstimator(rng, estimator_path, log_path, n_s, n_a, v_min, v_max, r
 
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180717_025049_20_workers_weights_1_10_puct_0p25_10_updates_per_sample_tau_1p1/3000")
 # load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180718_023256_20_workers_weights_1_10_puct_0p25_10_updates_per_sample_tau_1p1_stash_1_3/1750")
-load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180718_180800_20_workers_weights_1_10_puct_0p25_10_updates_per_sample_tau_1p1_stash_1_1p5/3507")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180718_180800_20_workers_weights_1_10_puct_0p25_10_updates_per_sample_tau_1p1_stash_1_1p5/4769")
+# load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180720_000635_20_workers_weights_1_10_puct_0p25_1_updates_per_sample_tau_1p1_stash_1_1p5_diriclet_1p0_combine_z_q/2258")
+load_network(estimator,"/home/cj/2018/Stanford/Code/Multilane.jl/Logs/180720_194819_50_workers_weights_1_10_puct_0p25_1_updates_per_sample_tau_1p1_stash_1_1p5_diriclet_1p0_combine_z_q/3905")
 
 allowed_actions = [1.0, 1.0, 1.0, 1.0]
 ##
@@ -95,13 +97,13 @@ end
 println(actions(mdp))
 
 
-##
-for y = 1:5
-   for x = 1:5
-      state = GridWorldState(x,y)
-      vec_state = MCTS.convert_state(state,mdp)
-      p,v = estimator.py_class[:forward_pass](vec_state)
-      # println(maximum(p))
-      println(p)
-   end
-end
+# ##
+# for y = 1:5
+#    for x = 1:5
+#       state = GridWorldState(x,y)
+#       vec_state = MCTS.convert_state(state,mdp)
+#       p,v = estimator.py_class[:forward_pass](vec_state)
+#       # println(maximum(p))
+#       println(p)
+#    end
+# end
