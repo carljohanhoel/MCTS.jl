@@ -58,7 +58,7 @@ function train(trainer::Trainer,
     nn_estimator = policy isa AZPlanner ? policy.solver.estimate_value : policy.planner.solver.estimate_value
 
     n_saves = 0
-    n_evals = 0
+    n_evals = -1 #Forces an evaluation run before the network is trained.
     step = 1
 
     while step <= training_steps
@@ -134,6 +134,11 @@ function train(trainer::Trainer,
                 policy.planner.training_phase=false
             end
             rng = trainer.fix_eval_eps ? copy(trainer.rng_eval) : trainer.rng_eval   #if fix_eval, keep rng constant to always evaluate the same set of episodes
+            if n_evals == 0
+                open(trainer.log_dir*"/"*"rngs.txt","a") do f
+                    writedlm(f, [[process_id, Int(rng.seed[1])]], " ")
+                end
+            end
             episode_reward = []
             episode_discounted_reward = []
             log = []
@@ -151,7 +156,9 @@ function train(trainer::Trainer,
                 eval_eps+=1
             end
             open(trainer.log_dir*"/"*"evalResults2.txt","a") do f
-                writedlm(f, log, " ")
+                for (i,row) in enumerate(log)
+                    writedlm(f, row, " ")
+                end
             end
             open(trainer.log_dir*"/"*"evalResults.txt","a") do f   #This is deprecated and should be removed in the future
                 writedlm(f, [[process_id, step, mean(episode_reward), mean(episode_discounted_reward), episode_reward, episode_discounted_reward]], " ")
@@ -213,20 +220,19 @@ function train_parallel(trainer::Trainer,
     for i in 2:n_procs-2
         #Set different RNGs
         rng_seed = 342*i+630 #rand(trainer.rng,1:1000000)
-        rng_estimator=MersenneTwister(rng_seed+1)
-        rng_evaluator=MersenneTwister(rng_seed+2)
-        rng_solver=MersenneTwister(rng_seed+3)
-        rng_history=MersenneTwister(rng_seed+4)
-        rng_trainer=MersenneTwister(rng_seed+5)
-        rng_belief=MersenneTwister(rng_seed+6)
+        rng_evaluator=MersenneTwister(Int(trainer.rng_eval.seed[1])+100*(i-1))
+        rng_solver=MersenneTwister(Int(policy.rng.seed[1])+100*(i-1))
+        rng_history=MersenneTwister(Int(sim.rng.seed[1])+100*(i-1))
+        rng_trainer=MersenneTwister(Int(trainer.rng.seed[1])+100*(i-1))
 
         policy_vec[i].solver.rng = rng_solver
         policy_vec[i].rng = rng_solver
         sim_vec[i].rng = rng_history
-        trainer_vec[i].rng = rng_evaluator
-        trainer_vec[i].rng_eval = rng_trainer
+        trainer_vec[i].rng = rng_trainer
+        trainer_vec[i].rng_eval = rng_evaluator
 
         if isdefined(belief_vec[i],:rng)
+            rng_belief=MersenneTwister(Int(belief_updater.rng.seed[1])+100*(i-1))
             belief_vec[i].rng = rng_belief
         end
 
