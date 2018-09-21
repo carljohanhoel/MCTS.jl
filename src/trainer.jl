@@ -133,12 +133,17 @@ function train(trainer::Trainer,
             else
                 policy.planner.training_phase=false
             end
-            rng = trainer.fix_eval_eps ? copy(trainer.rng_eval) : trainer.rng_eval   #if fix_eval, keep rng constant to always evaluate the same set of episodes
-            if n_evals == 0
-                open(trainer.log_dir*"/"*"rngs.txt","a") do f
-                    writedlm(f, [[process_id, Int(rng.seed[1])]], " ")
-                end
+            if trainer.fix_eval_eps   #if fix_eval, keep rng constant to always evaluate the same set of episodes
+                rng = copy(trainer.rng_eval)
+                rng_sim = copy(sim.rng)    #Save sim.rng for resetting it after evaluatio is done
+                sim.rng = MersenneTwister(Int(rng.seed[1])+1)
             end
+            # rng = trainer.fix_eval_eps ? copy(trainer.rng_eval) : trainer.rng_eval
+            # if n_evals == 0
+                open(trainer.log_dir*"/"*"rngs.txt","a") do f
+                    writedlm(f, [[process_id, Int(rng.seed[1]), Int(sim.rng.seed[1])]], " ")
+                end
+            # end
             episode_reward = []
             episode_discounted_reward = []
             log = []
@@ -167,6 +172,9 @@ function train(trainer::Trainer,
                 policy.training_phase=true
             else
                 policy.planner.training_phase=true
+            end
+            if trainer.fix_eval_eps   #Reset simulator rng if temproarily fixed during evaluation
+                sim.rng = rng_sim
             end
             n_evals+=1
             out = @spawnat 1 println("Evaluation finished on process "*string(process_id))
@@ -219,7 +227,7 @@ function train_parallel(trainer::Trainer,
     end
     for i in 2:n_procs-2
         #Set different RNGs
-        rng_seed = 342*i+630 #rand(trainer.rng,1:1000000)
+        # rng_seed = 342*i+630 #rand(trainer.rng,1:1000000) #Not used
         rng_evaluator=MersenneTwister(Int(trainer.rng_eval.seed[1])+100*(i-1))
         rng_solver=MersenneTwister(Int(policy.rng.seed[1])+100*(i-1))
         rng_history=MersenneTwister(Int(sim.rng.seed[1])+100*(i-1))
