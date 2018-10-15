@@ -276,17 +276,20 @@ function D3Trees.D3Tree(tree::AZTree; title="MCTS-AZ Tree", kwargs...)
                                  Q: %6.2f
                                  N: %6d
                                  P: %6.2f
+                                 r: %6.2f
                                  """,
                                  node_tag(tree.a_labels[sa]),
                                  tree.q[sa],
                                  tree.n[sa],
-                                 tree.p[sa]
+                                 tree.p[sa],
+                                 length(tree.transitions[sa])>0 ? tree.transitions[sa][1][2] : 0.0   #Assumes same reward for following states, which is true in this case.
                                 )
         tt[sa+lens] = """
                       $(tooltip_tag(tree.a_labels[sa]))
                       Q: $(tree.q[sa])
                       N: $(tree.n[sa])
                       P: $(tree.p[sa])
+                      r: $(length(tree.transitions[sa])>0 ? tree.transitions[sa][1][2] : 0.0)
                       """
 
         rel_q = (tree.q[sa]-min_q)/(max_q-min_q)
