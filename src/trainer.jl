@@ -17,7 +17,9 @@ mutable struct Trainer
     eval_freq::Int
     eval_eps::Int
     fix_eval_eps::Bool
+    remove_end_samples::Int
     stash_factor::Float64
+    save_evaluation_history::Bool
     show_progress::Bool
     log_dir::String
 end
@@ -30,11 +32,13 @@ function Trainer(;rng=MersenneTwister(rand(UInt32)),
                   eval_freq::Int=Inf,
                   eval_eps::Int=1,
                   fix_eval_eps::Bool=true,
+                  remove_end_samples::Int=0,
                   stash_factor::Float64=3.0,
+                  save_evaluation_history::Bool=false,
                   show_progress=false,
                   log_dir::String="./"
                  )
-    return Trainer(rng, rng_eval, training_steps, n_network_updates_per_sample, save_freq, eval_freq, eval_eps, fix_eval_eps, stash_factor, show_progress, log_dir)
+    return Trainer(rng, rng_eval, training_steps, n_network_updates_per_sample, save_freq, eval_freq, eval_eps, fix_eval_eps, remove_end_samples, stash_factor, save_evaluation_history, show_progress, log_dir)
 end
 
 struct VoidUpdater <: Updater
@@ -105,8 +109,19 @@ function train(trainer::Trainer,
            new_distributions = new_distributions[1:end-1,:]
            n_new_samples-=1
         end
-        # new_values = new_z_values
-        new_values = (new_z_values+new_q_values)/2
+
+        if trainer.remove_end_samples > 0
+            for i in 1:trainer.remove_end_samples
+                pop!(new_states)
+                pop!(new_z_values)
+                pop!(new_q_values)
+                new_distributions = new_distributions[1:end-1,:]
+                n_new_samples-=1
+            end
+        end
+
+        new_values = new_z_values
+        # new_values = (new_z_values+new_q_values)/2
 
         #Update network
         add_samples_to_memory(nn_estimator, new_states, new_distributions, new_values, p)
@@ -130,8 +145,14 @@ function train(trainer::Trainer,
             eval_eps = 1
             if policy isa AZPlanner
                 policy.training_phase=false
+                if trainer.save_evaluation_history
+                    policy.solver.tree_in_info = true
+                end
             else
                 policy.planner.training_phase=false
+                if trainer.save_evaluation_history
+                    policy.planner.solver.tree_in_info = true
+                end
             end
             if trainer.fix_eval_eps   #if fix_eval, keep rng constant to always evaluate the same set of episodes
                 rng = copy(trainer.rng_eval)
@@ -170,11 +191,16 @@ function train(trainer::Trainer,
             end
             if policy isa AZPlanner
                 policy.training_phase=true
+                policy.solver.tree_in_info = false
             else
                 policy.planner.training_phase=true
+                policy.planner.solver.tree_in_info = false
             end
             if trainer.fix_eval_eps   #Reset simulator rng if temproarily fixed during evaluation
                 sim.rng = rng_sim
+            end
+            if trainer.save_evaluation_history
+                JLD.save(trainer.log_dir*"/"*"eval_hist_process_"*string(process_id)*"_step_"*string(step)*".jld", "hist", hist)
             end
             n_evals+=1
             out = @spawnat 1 println("Evaluation finished on process "*string(process_id))

@@ -7,7 +7,7 @@ using POMDPToolbox #23 MB
 using PyCall #18 MB
 using Distributions #1 MB
 using StatsBase #0 MB
-# using JLD   #ZZZZ tmp, onl for debuggin, remove #16 MB
+using JLD   #ZZZZ tmp, onl for debuggin, remove #16 MB
 
 using Compat #0 MB
 using Blink #2 MB

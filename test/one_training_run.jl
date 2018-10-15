@@ -3,8 +3,8 @@ using Revise #21 MB ###### Comment for real runs to free RAM
 # debug = true
 debug = false
 
-parallel_version = true   #Test code in parallel mode
-# parallel_version = false
+# parallel_version = true   #Test code in parallel mode
+parallel_version = false
 
 simple_run = true
 # simple_run = false
@@ -49,6 +49,7 @@ if simple_run
    save_freq = Int(ceil(100/n_workers))*1000 ###
    eval_freq = Int(ceil(100/n_workers)) ###
    eval_eps = Int(ceil(8/n_workers))
+   save_evaluation_history = true
 else
    # replay_memory_max_size = 100000
    # training_start = 5000
@@ -71,7 +72,9 @@ else
    save_freq = Int(ceil(5000/n_workers))
    eval_freq = Int(ceil(5000/n_workers))
    eval_eps = Int(ceil(100/n_workers))
+   save_evaluation_history = true
 end
+
 
 sim_max_steps = 25
 
@@ -138,7 +141,7 @@ cp(pwd()*"/src/",log_path*"/code/src/")
 cp(estimator_path*".py",log_path*"/neural_net.py")
 
 ##
-trainer = Trainer(rng=rng_trainer, rng_eval=rng_evaluator, training_steps=training_steps, n_network_updates_per_sample=n_network_updates_per_sample, save_freq=save_freq, eval_freq=eval_freq, eval_eps=eval_eps, fix_eval_eps=true, stash_factor=stash_factor, show_progress=true, log_dir=log_path)
+trainer = Trainer(rng=rng_trainer, rng_eval=rng_evaluator, training_steps=training_steps, n_network_updates_per_sample=n_network_updates_per_sample, save_freq=save_freq, eval_freq=eval_freq, eval_eps=eval_eps, fix_eval_eps=true, stash_factor=stash_factor, save_evaluation_history=save_evaluation_history, show_progress=true, log_dir=log_path)
 if parallel_version
    processes = train_parallel(trainer, sim, mdp, policy)
 
