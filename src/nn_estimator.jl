@@ -8,11 +8,12 @@ mutable struct NNEstimator
     estimator_path::String
     v_min::Float64
     v_max::Float64
+    debug_with_uniform_nn_output::Bool
 end
 
-function NNEstimator(rng::AbstractRNG, estimator_path::String, log_path::String, n_states::Int, n_actions::Int,  v_min::Float64, v_max::Float64, replay_memory_max_size::Int, training_start::Int) #
+function NNEstimator(rng::AbstractRNG, estimator_path::String, log_path::String, n_states::Int, n_actions::Int,  v_min::Float64, v_max::Float64, replay_memory_max_size::Int, training_start::Int; debug_with_uniform_nn_output::Bool=false) #
     py_class = initialize_estimator(estimator_path, log_path, n_states, n_actions, replay_memory_max_size, training_start)
-    return NNEstimator(rng, py_class, estimator_path, v_min, v_max)
+    return NNEstimator(rng, py_class, estimator_path, v_min, v_max, debug_with_uniform_nn_output)
 end
 
 function initialize_estimator(estimator_path::String, log_path::String, n_states::Int, n_actions::Int, replay_memory_max_size::Int, training_start::Int)
@@ -26,15 +27,23 @@ end
 estimate_value(estimator::NNEstimator, p::Union{POMDP,MDP}, state, depth::Int) = estimate_value(estimator, state, p)
 
 function estimate_value(estimator::NNEstimator, state, p::Union{POMDP,MDP})
-    converted_state = convert_state(state, p)
-    dist, value = estimator.py_class[:forward_pass](converted_state)
-    value = value*(estimator.v_max-estimator.v_min)+estimator.v_min #Scale [0,1]->[v_min,v_max]
+    if estimator.debug_with_uniform_nn_output
+        value = [15.0]    #Just for testing during debugging
+    else
+        converted_state = convert_state(state, p)
+        dist, value = estimator.py_class[:forward_pass](converted_state)
+        value = value*(estimator.v_max-estimator.v_min)+estimator.v_min #Scale [0,1]->[v_min,v_max]
+    end
     return value #Convert to scalar
 end
 
 function estimate_distribution(estimator::NNEstimator, state, allowed_actions, p::Union{POMDP,MDP})
-    converted_state = convert_state(state, p)
-    dist, value = estimator.py_class[:forward_pass](converted_state)
+    if estimator.debug_with_uniform_nn_output
+        dist = [0.2 0.2 0.2 0.2 0.2]   #Just for testing during debugging
+    else
+        converted_state = convert_state(state, p)
+        dist, value = estimator.py_class[:forward_pass](converted_state)
+    end
     dist = dist.*allowed_actions
     sum_dist = sum(dist,2)
     if any(sum_dist.==0)   #Before the network is trained, the only allowed actions could get prob 0. In that case, set equal prior prob.
