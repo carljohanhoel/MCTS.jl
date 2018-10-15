@@ -150,9 +150,13 @@ function simulate(az::AZPlanner, snode::Int)
         for (i,a) in enumerate(all_actions)   #Loop through all actions, even the forbidden ones, but set their probabilities to 0
             n0 = init_N(sol.init_N, az.mdp, s, a)   #sol.initN set to 0
             p0 = p0_vec[i]
+            # insert_action_node!(tree, snode, a, n0,
+            #                     init_Q(sol.init_Q, az.mdp, s, a), p0,   #sol.initQ set to 0
+            #                     false)
             insert_action_node!(tree, snode, a, n0,
-                                init_Q(sol.init_Q, az.mdp, s, a), p0,   #sol.initQ set to 0
-                                false)
+                                tree.v0[snode], p0,    #Initializing Q to parent estimated value instead of 0
+                                sol.check_repeat_action
+                               )
             tree.total_n[snode] += n0
         end
     end
