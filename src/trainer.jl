@@ -145,14 +145,8 @@ function train(trainer::Trainer,
             eval_eps = 1
             if policy isa AZPlanner
                 policy.training_phase=false
-                if trainer.save_evaluation_history
-                    policy.solver.tree_in_info = true
-                end
             else
                 policy.planner.training_phase=false
-                if trainer.save_evaluation_history
-                    policy.planner.solver.tree_in_info = true
-                end
             end
             if trainer.fix_eval_eps   #if fix_eval, keep rng constant to always evaluate the same set of episodes
                 rng = copy(trainer.rng_eval)
@@ -191,15 +185,13 @@ function train(trainer::Trainer,
             end
             if policy isa AZPlanner
                 policy.training_phase=true
-                policy.solver.tree_in_info = false
             else
                 policy.planner.training_phase=true
-                policy.planner.solver.tree_in_info = false
             end
             if trainer.fix_eval_eps   #Reset simulator rng if temproarily fixed during evaluation
                 sim.rng = rng_sim
             end
-            if trainer.save_evaluation_history
+            if trainer.save_evaluation_history && process_id <= 3   #Hard coded just save history for 3 processes
                 JLD.save(trainer.log_dir*"/"*"eval_hist_process_"*string(process_id)*"_step_"*string(step)*".jld", "hist", hist)
             end
             n_evals+=1
