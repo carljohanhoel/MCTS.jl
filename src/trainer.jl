@@ -191,7 +191,7 @@ function train(trainer::Trainer,
             if trainer.fix_eval_eps   #Reset simulator rng if temproarily fixed during evaluation
                 sim.rng = rng_sim
             end
-            if trainer.save_evaluation_history && process_id <= 3   #Hard coded just save history for 3 processes
+            if trainer.save_evaluation_history && process_id <= 7   #Hard coded just save history for 5 processes (first worker is process 3)
                 JLD.save(trainer.log_dir*"/"*"eval_hist_process_"*string(process_id)*"_step_"*string(step)*".jld", "hist", hist)
             end
             n_evals+=1

@@ -3,15 +3,15 @@ using Revise #21 MB ###### Comment for real runs to free RAM
 # debug = true
 debug = false
 
-# parallel_version = true   #Test code in parallel mode
-parallel_version = false
+parallel_version = true   #Test code in parallel mode
+# parallel_version = false
 
 simple_run = true
 # simple_run = false
 
 if parallel_version
-   n_workers = 50
-   # n_workers = 8
+   # n_workers = 50
+   n_workers = 8
    # n_workers = 4
    # n_workers = 1
    if simple_run
@@ -46,7 +46,7 @@ if simple_run
    training_start = 100
    training_steps = Int(ceil(1000/n_workers))*1000 ###
    n_network_updates_per_sample = 1
-   save_freq = Int(ceil(100/n_workers))*1000 ###
+   save_freq = Int(ceil(100/n_workers))*10 ###
    eval_freq = Int(ceil(100/n_workers)) ###
    eval_eps = Int(ceil(8/n_workers))
    save_evaluation_history = true
