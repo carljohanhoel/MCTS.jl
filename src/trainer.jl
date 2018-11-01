@@ -152,11 +152,15 @@ function train(trainer::Trainer,
                 rng = copy(trainer.rng_eval)
                 rng_sim = copy(sim.rng)    #Save sim.rng for resetting it after evaluatio is done
                 sim.rng = MersenneTwister(Int(rng.seed[1])+1)
+                rng_policy = copy(policy.rng)
+                rng_solver = copy(policy.solver.rng)
+                policy.rng = MersenneTwister(Int(rng.seed[1])+2)
+                policy.solver.rng = MersenneTwister(Int(rng.seed[1])+3)
             end
             # rng = trainer.fix_eval_eps ? copy(trainer.rng_eval) : trainer.rng_eval
             # if n_evals == 0
                 open(trainer.log_dir*"/"*"rngs.txt","a") do f
-                    writedlm(f, [[process_id, Int(rng.seed[1]), Int(sim.rng.seed[1])]], " ")
+                    writedlm(f, [[process_id, Int(rng.seed[1]), Int(sim.rng.seed[1]), Int(policy.rng.seed[1]), Int(policy.solver.rng.seed[1])]], " ")
                 end
             # end
             episode_reward = []
@@ -190,6 +194,9 @@ function train(trainer::Trainer,
             end
             if trainer.fix_eval_eps   #Reset simulator rng if temproarily fixed during evaluation
                 sim.rng = rng_sim
+                policy.rng = rng_policy
+                policy.solver.rng = rng_solver
+
             end
             if trainer.save_evaluation_history && process_id <= 7   #Hard coded just save history for 5 processes (first worker is process 3)
                 JLD.save(trainer.log_dir*"/"*"eval_hist_process_"*string(process_id)*"_step_"*string(step)*".jld", "hist", hist)
