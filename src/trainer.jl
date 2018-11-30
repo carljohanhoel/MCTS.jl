@@ -108,17 +108,19 @@ function train(trainer::Trainer,
            pop!(new_q_values)
            new_distributions = new_distributions[1:end-1,:]
            n_new_samples-=1
+
+           if trainer.remove_end_samples > 0    #Remove some more samples, to reduce effect of badly estimated final value
+               for i in 1:trainer.remove_end_samples
+                   pop!(new_states)
+                   pop!(new_z_values)
+                   pop!(new_q_values)
+                   new_distributions = new_distributions[1:end-1,:]
+                   n_new_samples-=1
+               end
+           end
         end
 
-        if trainer.remove_end_samples > 0
-            for i in 1:trainer.remove_end_samples
-                pop!(new_states)
-                pop!(new_z_values)
-                pop!(new_q_values)
-                new_distributions = new_distributions[1:end-1,:]
-                n_new_samples-=1
-            end
-        end
+
 
         new_values = new_z_values
         # new_values = (new_z_values+new_q_values)/2
