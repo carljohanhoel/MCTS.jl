@@ -202,7 +202,11 @@ function simulate(az::AZPlanner, snode::Int)
         spnode = sol.check_repeat_state ? get(tree.s_lookup, sp, 0) : 0
 
         if spnode == 0 # there was not a state node for sp already in the tree
-            v0 = estimate_value(az.solved_estimate, az.mdp, sp, az.solver.depth)[1]
+            if isterminal(az.mdp, sp)
+                v0 = 0.0
+            else
+                v0 = estimate_value(az.solved_estimate, az.mdp, sp, az.solver.depth)[1]
+            end
             spnode = insert_state_node!(tree, sp, v0, sol.keep_tree || sol.check_repeat_state)
             new_node = true
         end
