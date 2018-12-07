@@ -157,7 +157,7 @@ function train(trainer::Trainer,
                 rng_policy = copy(policy.rng)
                 rng_solver = copy(policy.solver.rng)
                 policy.rng = MersenneTwister(Int(rng.seed[1])+2)
-                policy.solver.rng = MersenneTwister(Int(rng.seed[1])+3)
+                policy.solver.rng = policy.rng #MersenneTwister(Int(rng.seed[1])+3) #This was wrong before, but doesn't matter, since policy.solver.rng was never used (?)
             end
             # rng = trainer.fix_eval_eps ? copy(trainer.rng_eval) : trainer.rng_eval
             # if n_evals == 0

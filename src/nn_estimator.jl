@@ -3,7 +3,6 @@
 Call to python for a neural network estimator of state value and action probabilities
 """
 mutable struct NNEstimator
-    rng::AbstractRNG
     py_class::PyCall.PyObject
     estimator_path::String
     v_min::Float64
@@ -11,9 +10,9 @@ mutable struct NNEstimator
     debug_with_uniform_nn_output::Bool
 end
 
-function NNEstimator(rng::AbstractRNG, estimator_path::String, log_path::String, n_states::Int, n_actions::Int,  v_min::Float64, v_max::Float64, replay_memory_max_size::Int, training_start::Int; debug_with_uniform_nn_output::Bool=false) #
+function NNEstimator(estimator_path::String, log_path::String, n_states::Int, n_actions::Int,  v_min::Float64, v_max::Float64, replay_memory_max_size::Int, training_start::Int; debug_with_uniform_nn_output::Bool=false) #
     py_class = initialize_estimator(estimator_path, log_path, n_states, n_actions, replay_memory_max_size, training_start)
-    return NNEstimator(rng, py_class, estimator_path, v_min, v_max, debug_with_uniform_nn_output)
+    return NNEstimator(py_class, estimator_path, v_min, v_max, debug_with_uniform_nn_output)
 end
 
 function initialize_estimator(estimator_path::String, log_path::String, n_states::Int, n_actions::Int, replay_memory_max_size::Int, training_start::Int)
