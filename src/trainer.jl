@@ -200,7 +200,7 @@ function train(trainer::Trainer,
                 policy.solver.rng = rng_solver
 
             end
-            if trainer.save_evaluation_history && process_id <= 7   #Hard coded just save history for 5 processes (first worker is process 3)
+            if trainer.save_evaluation_history && process_id <= 22   #Hard coded just save history for 5 processes (first worker is process 3)
                 JLD.save(trainer.log_dir*"/"*"eval_hist_process_"*string(process_id)*"_step_"*string(step)*".jld", "hist", hist)
             end
             n_evals+=1
